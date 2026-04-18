@@ -466,7 +466,7 @@ Edd：「こっち！」「ほら、あそこにいるよ……」
 
 ### ③ Showstoppersのパフォーマンスとコンセプトアート解説
 
-![Boozoo the Ringmaster（ショーストッパーズ）](./images/boozoo_main.png)
+![Boozoo the Ringmaster（ショーストッパーズ）](./images/boozoo_broken.webp)
 
 【Bon's Burgersのショー映像。「All I See is You」が流れ、ロゴ表示、観客の拍手、カーテンが開きShowstoppersが現れ「THE SHOWSTOPPERS」と表示される】
 
