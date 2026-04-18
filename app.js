@@ -1,0 +1,344 @@
+const FALLBACK_NOTE = `
+## ノートの読み込みに失敗しました
+
+\`twf-web/note.md\` が見つからない、または読み込みできませんでした。
+
+### 解決方法
+
+1. \`twf-web\` フォルダ内に \`note.md\` を配置する  
+2. ブラウザを再読み込みする
+
+※ Vercel運用では、\`note.md\` のみを更新対象にする構成がおすすめです。
+`;
+
+const markdownContainer = document.getElementById("markdownContainer");
+const tocList = document.getElementById("tocList");
+const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+const clearSearchButton = document.getElementById("clearSearchButton");
+const summaryStatus = document.getElementById("summaryStatus");
+
+const slugCounts = new Map();
+
+function slugify(text) {
+  const base = text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\wぁ-んァ-ン一-龥ー\- ]+/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  const fallback = base || "section";
+  const seen = slugCounts.get(fallback) ?? 0;
+  slugCounts.set(fallback, seen + 1);
+  return seen === 0 ? fallback : `${fallback}-${seen + 1}`;
+}
+
+function escapeHtml(text) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function formatInline(text) {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\[(.+?)\]\((#.+?)\)/g, '<a href="$2">$1</a>')
+    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+}
+
+function normalizeSource(raw) {
+  return raw.replace(/^---[\s\S]*?##\s*/m, "## ");
+}
+
+function simpleMarkdownToHtml(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const html = [];
+  let inUl = false;
+  let inOl = false;
+  let inQuote = false;
+  let quoteType = "";
+
+  const closeAll = () => {
+    if (inUl) html.push("</ul>");
+    if (inOl) html.push("</ol>");
+    if (inQuote) {
+      html.push(quoteType === "default" ? "</blockquote>" : "</div>");
+    }
+    inUl = false;
+    inOl = false;
+    inQuote = false;
+    quoteType = "";
+  };
+
+  for (const lineRaw of lines) {
+    const line = lineRaw.trimEnd();
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      closeAll();
+      continue;
+    }
+
+    if (/^---$/.test(trimmed)) {
+      closeAll();
+      html.push("<hr>");
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{2,4})\s+(.+)$/);
+    if (heading) {
+      closeAll();
+      const level = heading[1].length;
+      const headingTextRaw = heading[2].trim();
+      const idMatch = headingTextRaw.match(/^(.*)\s+\{#([A-Za-z0-9_-]+)\}$/);
+      const headingText = idMatch ? idMatch[1].trim() : headingTextRaw;
+      const headingId = idMatch ? idMatch[2] : "";
+      const idAttr = headingId ? ` id="${headingId}"` : "";
+      html.push(`<h${level}${idAttr}>${formatInline(headingText)}</h${level}>`);
+      continue;
+    }
+
+    if (trimmed.startsWith("> ")) {
+      let text = trimmed.slice(2);
+      if (!inQuote) {
+        closeAll();
+        inQuote = true;
+        const match = text.match(/^\[!(note|warning|info|danger|tip)\]/i);
+        if (match) {
+          quoteType = match[1].toLowerCase();
+          html.push(`<div class="callout callout-${quoteType}">`);
+          text = text.replace(/^\[!.*?\]\s*/, "");
+        } else {
+          quoteType = "default";
+          html.push("<blockquote>");
+        }
+      }
+      if (text) {
+        html.push(`<p>${formatInline(text)}</p>`);
+      }
+      continue;
+    }
+
+    const ol = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (ol) {
+      if (!inOl) {
+        closeAll();
+        inOl = true;
+        html.push("<ol>");
+      }
+      html.push(`<li>${formatInline(ol[1])}</li>`);
+      continue;
+    }
+
+    const ul = trimmed.match(/^-+\s+(.+)$/);
+    if (ul) {
+      if (!inUl) {
+        closeAll();
+        inUl = true;
+        html.push("<ul>");
+      }
+      html.push(`<li>${formatInline(ul[1])}</li>`);
+      continue;
+    }
+
+    closeAll();
+    const formatted = formatInline(trimmed);
+    if (formatted.startsWith("<strong>隠し要素：</strong>") || formatted.startsWith("<strong>隠し要素:</strong>")) {
+      html.push(`<div class="callout callout-secret"><p>${formatted}</p></div>`);
+    } else {
+      html.push(`<p>${formatted}</p>`);
+    }
+  }
+
+  closeAll();
+  return html.join("\n");
+}
+
+function assignFile4AnchorIds() {
+  const headingMap = {
+    "①": "f4-01",
+    "②": "f4-02",
+    "③": "f4-03",
+    "④": "f4-04",
+    "⑤": "f4-05",
+    "⑥": "f4-06",
+    "⑦": "f4-07",
+    "⑧": "f4-08",
+    "⑨": "f4-09",
+    "⑩": "f4-10",
+    "⑪": "f4-11",
+    "⑫": "f4-12"
+  };
+
+  const allHeadings = Array.from(markdownContainer.querySelectorAll("h2, h3"));
+  const file4Index = allHeadings.findIndex(
+    (heading) => heading.tagName === "H2" && heading.textContent?.trim().startsWith("ファイル4 — CyberFun Tech")
+  );
+  if (file4Index === -1) return;
+
+  for (let i = file4Index + 1; i < allHeadings.length; i += 1) {
+    const heading = allHeadings[i];
+    if (heading.tagName === "H2") break;
+    if (heading.tagName !== "H3") continue;
+    const text = heading.textContent?.trim() ?? "";
+    const mark = text.charAt(0);
+
+    if (headingMap[mark]) {
+      heading.id = headingMap[mark];
+      continue;
+    }
+    if (text.startsWith("Wikiから得られる補足情報・トリビア")) {
+      heading.id = "f4-trivia";
+      continue;
+    }
+    if (text.startsWith("主要ポイントまとめ")) {
+      heading.id = "f4-summary";
+    }
+  }
+}
+
+function buildToc() {
+  tocList.innerHTML = "";
+  assignFile4AnchorIds();
+  const headings = markdownContainer.querySelectorAll("h2, h3");
+  let autoIdCounter = 1;
+  headings.forEach((heading) => {
+    if (!heading.id) {
+      // Keep URL hashes ASCII-only for headings without explicit anchors.
+      heading.id = `sec-${autoIdCounter}`;
+      autoIdCounter += 1;
+    }
+    const li = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = `#${heading.id}`;
+    link.textContent = heading.textContent ?? "";
+    link.dataset.level = heading.tagName.replace("H", "");
+    li.appendChild(link);
+    tocList.appendChild(li);
+  });
+}
+
+function clearHighlights() {
+  const marks = markdownContainer.querySelectorAll("mark");
+  marks.forEach((mark) => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+    parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
+    parent.normalize();
+  });
+}
+
+function highlightKeyword(keyword) {
+  clearHighlights();
+  if (!keyword) return 0;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, "gi");
+  let count = 0;
+
+  const walker = document.createTreeWalker(markdownContainer, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+      if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+      if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+  textNodes.forEach((textNode) => {
+    const text = textNode.nodeValue;
+    if (!text || !regex.test(text)) return;
+    regex.lastIndex = 0;
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    text.replace(regex, (matched, offset) => {
+      const start = Number(offset);
+      if (start > cursor) fragment.append(text.slice(cursor, start));
+      const mark = document.createElement("mark");
+      mark.textContent = matched;
+      fragment.append(mark);
+      cursor = start + matched.length;
+      count += 1;
+      return matched;
+    });
+    if (cursor < text.length) fragment.append(text.slice(cursor));
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  });
+
+  return count;
+}
+
+function scrollToFirstMark() {
+  const firstMark = markdownContainer.querySelector("mark");
+  if (!firstMark) return;
+  firstMark.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function updateSearchStatus(keyword, count) {
+  if (!keyword) {
+    summaryStatus.textContent = "";
+    summaryStatus.classList.remove("error");
+    return;
+  }
+  summaryStatus.textContent = `「${keyword}」の一致: ${count}件`;
+  summaryStatus.classList.toggle("error", count === 0);
+}
+
+function wireSearch() {
+  if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
+
+  const runSearch = ({ shouldScroll } = { shouldScroll: false }) => {
+    const keyword = searchInput.value.trim();
+    const count = highlightKeyword(keyword);
+    updateSearchStatus(keyword, count);
+    if (shouldScroll && keyword && count > 0) {
+      scrollToFirstMark();
+    }
+  };
+
+  searchButton.addEventListener("click", () => runSearch({ shouldScroll: true }));
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") runSearch({ shouldScroll: true });
+  });
+
+  clearSearchButton.addEventListener("click", () => {
+    searchInput.value = "";
+    clearHighlights();
+    updateSearchStatus("", 0);
+    searchInput.focus();
+  });
+
+  updateSearchStatus("", 0);
+}
+
+async function init() {
+  summaryStatus.textContent = "";
+
+  let markdown = FALLBACK_NOTE;
+  let loadedFromFile = false;
+
+  try {
+    const response = await fetch("./note.md", { cache: "no-store" });
+    if (response.ok) {
+      markdown = await response.text();
+      loadedFromFile = true;
+    }
+  } catch (_error) {
+    loadedFromFile = false;
+  }
+
+  markdownContainer.innerHTML = simpleMarkdownToHtml(normalizeSource(markdown));
+  buildToc();
+  wireSearch();
+  summaryStatus.textContent = loadedFromFile
+    ? ""
+    : "note.md が未配置のため、案内テキストを表示中です。";
+}
+
+init();
