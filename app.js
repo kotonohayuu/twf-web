@@ -49,6 +49,10 @@ function formatInline(text) {
     .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
 }
 
+function renderImage(altText, src) {
+  return `<figure class="wiki-figure"><img src="${src}" alt="${escapeHtml(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
+}
+
 function normalizeSource(raw) {
   return raw.replace(/^---[\s\S]*?##\s*/m, "## ");
 }
@@ -141,6 +145,14 @@ function simpleMarkdownToHtml(markdown) {
         html.push("<ul>");
       }
       html.push(`<li>${formatInline(ul[1])}</li>`);
+      continue;
+    }
+
+    // 画像構文: ![alt](src)
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      closeAll();
+      html.push(renderImage(imgMatch[1], imgMatch[2]));
       continue;
     }
 
