@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Walten Files 考察サイト</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__content">
+        <div class="hero__text">
+          <p class="eyebrow">The Walten Files</p>
+          <h1>考察ノート ビジュアルアーカイブ</h1>
+          <p class="hero__lead">
+            元ノートを網羅しつつ、章ごとに追いやすく整理した閲覧サイトです。
+            検索・目次・タイムラインで必要な情報へすぐ移動できます。
+          </p>
+          <div class="hero__actions">
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="キーワード検索（例: ソフィー, フェリックス, 1974）"
+              aria-label="キーワード検索"
+            />
+            <button id="searchButton" type="button">検索</button>
+            <button id="clearSearchButton" type="button">クリア</button>
+          </div>
+        </div>
+        <div class="hero__visual">
+          <img src="./bon.png" alt="Bon" class="hero__image" />
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="目次">
+        <h2>目次</h2>
+        <nav>
+          <ul id="tocList"></ul>
+        </nav>
+      </aside>
+
+      <section class="content">
+        <section class="quick-guide">
+          <h2>クイックガイド</h2>
+          <div class="guide-grid">
+            <article class="guide-card">
+              <h3>全体テーマ</h3>
+              <p>記憶と忘却、罪と隠蔽、そして「美しくする」という歪んだ論理。</p>
+            </article>
+            <article class="guide-card">
+              <h3>中心人物</h3>
+              <p>ソフィー・ウォルテンの記憶回復が、全ファイルを貫く軸として機能。</p>
+            </article>
+            <article class="guide-card">
+              <h3>重要舞台</h3>
+              <p>Bon's Burgers / K-9保管施設 / BunnyFarm（ゲーム媒体）。</p>
+            </article>
+            <article class="guide-card">
+              <h3>よく出るキー語</h3>
+              <p>「きれいにする」「Safety in pills」「I'm still here」。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="timeline">
+          <h2>主要年表（要点）</h2>
+          <ol>
+            <li><span>1967</span> フェリックスとジャックがBSIを共同で立ち上げ。</li>
+            <li><span>1974/05/02</span> 飲酒事故（エッド＆モリー死亡、遺体隠蔽）。</li>
+            <li><span>1974/06/11</span> ジャック失踪。</li>
+            <li><span>1974/06/28</span> Bon's Burgers開店。</li>
+            <li><span>1974/07/20</span> Bon's Burgers閉業。</li>
+            <li><span>1978</span> Relocate Project始動、施設関連映像群。</li>
+            <li><span>1982</span> ブライアン調査録画 / BunnyFarm関連記録。</li>
+            <li><span>2020-2023</span> Lucky You, Guilty, souvenir, Spectacle公開。</li>
+          </ol>
+        </section>
+
+        <section>
+          <h2>本文アーカイブ</h2>
+          <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
+          <article id="markdownContainer" class="markdown-body"></article>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Source: The Walten Files 考察ノート.md / Built for readable coverage.</p>
+    </footer>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
