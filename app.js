@@ -41,16 +41,51 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;");
 }
 
+function escapeHtmlAttr(text) {
+  return escapeHtml(text)
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function sanitizeLinkHref(rawHref) {
+  const href = rawHref.trim();
+  if (/^#[A-Za-z0-9_-]+$/.test(href)) return href;
+  if (/^https?:\/\/[^\s"'<>`]+$/i.test(href)) return href;
+  return "";
+}
+
+function sanitizeImageSrc(rawSrc) {
+  const src = rawSrc.trim();
+  if (/^https?:\/\/[^\s"'<>`]+$/i.test(src)) return src;
+  if (src.includes("..")) return "";
+  if (/^(?:\.\/|\/)?[A-Za-z0-9/_-]+\.(?:png|jpe?g|gif|webp|avif|svg)$/i.test(src)) {
+    if (src.startsWith("./") || src.startsWith("/")) return src;
+    return `./${src}`;
+  }
+  return "";
+}
+
 function formatInline(text) {
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/\[(.+?)\]\((#.+?)\)/g, '<a href="$2">$1</a>')
-    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+    .replace(/\[(.+?)\]\((#.+?)\)/g, (_match, textValue, href) => {
+      const safeHref = sanitizeLinkHref(href);
+      return safeHref ? `<a href="${escapeHtmlAttr(safeHref)}">${textValue}</a>` : textValue;
+    })
+    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, (_match, textValue, href) => {
+      const safeHref = sanitizeLinkHref(href);
+      if (!safeHref) return textValue;
+      return `<a href="${escapeHtmlAttr(safeHref)}" target="_blank" rel="noopener noreferrer">${textValue}</a>`;
+    });
 }
 
 function renderImage(altText, src) {
-  return `<figure class="wiki-figure"><img src="${src}" alt="${escapeHtml(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
+  const safeSrc = sanitizeImageSrc(src);
+  if (!safeSrc) {
+    return `<p class="status error">危険な画像URLをブロックしました: <code>${escapeHtml(src)}</code></p>`;
+  }
+  return `<figure class="wiki-figure"><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
 }
 
 function normalizeSource(raw) {
@@ -167,6 +202,51 @@ function simpleMarkdownToHtml(markdown) {
 
   closeAll();
   return html.join("\n");
+}
+
+function sanitizeGeneratedHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  template.content.querySelectorAll("script, style, iframe, object, embed, link, meta").forEach((node) => {
+    node.remove();
+  });
+
+  template.content.querySelectorAll("*").forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value;
+
+      if (name.startsWith("on") || name === "style") {
+        element.removeAttribute(attribute.name);
+        return;
+      }
+
+      if (name === "href") {
+        const safeHref = sanitizeLinkHref(value);
+        if (!safeHref) {
+          element.removeAttribute("href");
+          return;
+        }
+        element.setAttribute("href", safeHref);
+        if (/^https?:\/\//i.test(safeHref)) {
+          element.setAttribute("target", "_blank");
+          element.setAttribute("rel", "noopener noreferrer");
+        }
+      }
+
+      if (name === "src") {
+        const safeSrc = sanitizeImageSrc(value);
+        if (!safeSrc) {
+          element.remove();
+          return;
+        }
+        element.setAttribute("src", safeSrc);
+      }
+    });
+  });
+
+  return template.innerHTML;
 }
 
 function assignFile4AnchorIds() {
@@ -345,7 +425,8 @@ async function init() {
     loadedFromFile = false;
   }
 
-  markdownContainer.innerHTML = simpleMarkdownToHtml(normalizeSource(markdown));
+  const rendered = simpleMarkdownToHtml(normalizeSource(markdown));
+  markdownContainer.innerHTML = sanitizeGeneratedHtml(rendered);
   buildToc();
   wireSearch();
   summaryStatus.textContent = loadedFromFile
