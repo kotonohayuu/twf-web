@@ -104,6 +104,7 @@ h1 {
 input[type="search"] {
   flex: 1;
   min-width: 280px;
+  width: 100%;
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid var(--line);
@@ -146,8 +147,24 @@ button:hover {
 }
 
 .sidebar h2 {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 1rem;
+}
+
+.sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sidebar__toggle {
+  display: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  white-space: nowrap;
 }
 
 #tocList {
@@ -186,6 +203,8 @@ button:hover {
   border-radius: 12px;
   background: var(--panel);
   padding: 18px;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
 }
 
 .guide-grid {
@@ -339,14 +358,61 @@ button:hover {
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
+    padding: 20px 14px 28px;
+    gap: 16px;
   }
 
   .sidebar {
-    position: static;
-    max-height: none;
+    position: sticky;
+    top: 10px;
+    max-height: calc(100vh - 20px);
   }
 
   .guide-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    position: static;
+    top: auto;
+    max-height: none;
+  }
+
+  .hero__content {
+    padding: 28px 14px 24px;
+    gap: 18px;
+  }
+
+  .sidebar__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+  }
+
+  input[type="search"] {
+    min-width: 0;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .quick-guide,
+  .timeline,
+  .markdown-body,
+  .sidebar {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .timeline span {
+    min-width: 84px;
   }
 }

@@ -28,15 +28,26 @@
           </div>
         </div>
         <div class="hero__visual">
-          <img src="./bon.png" alt="Bon" class="hero__image" />
+          <img src="./bon.png" alt="Bon" class="hero__image" decoding="async" fetchpriority="high" />
         </div>
       </div>
     </header>
 
     <main class="layout">
       <aside class="sidebar" aria-label="目次">
-        <h2>目次</h2>
-        <nav>
+        <div class="sidebar__header">
+          <h2>目次</h2>
+          <button
+            id="tocToggleButton"
+            class="sidebar__toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="tocNav"
+          >
+            目次を開く
+          </button>
+        </div>
+        <nav id="tocNav">
           <ul id="tocList"></ul>
         </nav>
       </aside>

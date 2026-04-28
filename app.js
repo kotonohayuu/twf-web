@@ -13,6 +13,8 @@ const FALLBACK_NOTE = `
 
 const markdownContainer = document.getElementById("markdownContainer");
 const tocList = document.getElementById("tocList");
+const tocNav = document.getElementById("tocNav");
+const tocToggleButton = document.getElementById("tocToggleButton");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
 const clearSearchButton = document.getElementById("clearSearchButton");
@@ -293,10 +295,12 @@ function assignFile4AnchorIds() {
 }
 
 function buildToc() {
+  if (!tocList) return;
   tocList.innerHTML = "";
   assignFile4AnchorIds();
   const headings = markdownContainer.querySelectorAll("h2, h3");
   let autoIdCounter = 1;
+  const fragment = document.createDocumentFragment();
   headings.forEach((heading) => {
     if (!heading.id) {
       // Keep URL hashes ASCII-only for headings without explicit anchors.
@@ -309,8 +313,41 @@ function buildToc() {
     link.textContent = heading.textContent ?? "";
     link.dataset.level = heading.tagName.replace("H", "");
     li.appendChild(link);
-    tocList.appendChild(li);
+    fragment.appendChild(li);
   });
+  tocList.appendChild(fragment);
+}
+
+function wireTocToggle() {
+  if (!tocNav || !tocToggleButton) return;
+
+  const mobileQuery = window.matchMedia("(max-width: 640px)");
+
+  const applyCollapsedState = (collapsed) => {
+    tocNav.hidden = collapsed;
+    tocToggleButton.setAttribute("aria-expanded", String(!collapsed));
+    tocToggleButton.textContent = collapsed ? "目次を開く" : "目次を閉じる";
+  };
+
+  const syncByViewport = () => {
+    if (mobileQuery.matches) {
+      applyCollapsedState(true);
+      return;
+    }
+    applyCollapsedState(false);
+  };
+
+  tocToggleButton.addEventListener("click", () => {
+    applyCollapsedState(!tocNav.hidden);
+  });
+
+  if (typeof mobileQuery.addEventListener === "function") {
+    mobileQuery.addEventListener("change", syncByViewport);
+  } else {
+    mobileQuery.addListener(syncByViewport);
+  }
+
+  syncByViewport();
 }
 
 function clearHighlights() {
@@ -384,6 +421,7 @@ function updateSearchStatus(keyword, count) {
 
 function wireSearch() {
   if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
+  let inputDebounceTimer = null;
 
   const runSearch = ({ shouldScroll } = { shouldScroll: false }) => {
     const keyword = searchInput.value.trim();
@@ -398,8 +436,15 @@ function wireSearch() {
   searchInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") runSearch({ shouldScroll: true });
   });
+  searchInput.addEventListener("input", () => {
+    if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
+    inputDebounceTimer = window.setTimeout(() => {
+      runSearch({ shouldScroll: false });
+    }, 180);
+  });
 
   clearSearchButton.addEventListener("click", () => {
+    if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
     searchInput.value = "";
     clearHighlights();
     updateSearchStatus("", 0);
@@ -410,6 +455,7 @@ function wireSearch() {
 }
 
 async function init() {
+  if (!summaryStatus) return;
   summaryStatus.textContent = "";
 
   let markdown = FALLBACK_NOTE;
@@ -427,11 +473,14 @@ async function init() {
 
   const rendered = simpleMarkdownToHtml(normalizeSource(markdown));
   markdownContainer.innerHTML = sanitizeGeneratedHtml(rendered);
-  buildToc();
-  wireSearch();
-  summaryStatus.textContent = loadedFromFile
-    ? ""
-    : "note.md が未配置のため、案内テキストを表示中です。";
+  requestAnimationFrame(() => {
+    buildToc();
+    wireTocToggle();
+    wireSearch();
+    summaryStatus.textContent = loadedFromFile
+      ? ""
+      : "note.md が未配置のため、案内テキストを表示中です。";
+  });
 }
 
 init();
