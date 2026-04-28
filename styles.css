@@ -1,13 +1,16 @@
 :root {
   color-scheme: dark;
-  --bg: #0f1115;
-  --panel: #171a21;
-  --panel-2: #1f2430;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --accent: #7dd3fc;
-  --accent-2: #c4b5fd;
-  --line: #2b3240;
+  --bg: #090b10;
+  --panel: #151922;
+  --panel-2: #202636;
+  --text: #e8edf7;
+  --muted: #aeb7c8;
+  --accent: #68d7ff;
+  --accent-2: #9db7ff;
+  --line: #30384a;
+  --line-light: #566178;
+  --line-dark: #05070b;
+  --titlebar: #173f8f;
   --danger: #fca5a5;
 }
 
@@ -19,25 +22,31 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, #0b0e15 0%, var(--bg) 100%);
   color: var(--text);
-  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+  font-family: "MS PGothic", "Yu Gothic UI", "Segoe UI", sans-serif;
   line-height: 1.7;
 }
 
 a {
   color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .hero {
-  border-bottom: 1px solid var(--line);
-  background: radial-gradient(circle at top left, #1f2937 0%, #0f1115 60%);
+  border-bottom: 2px solid var(--line-dark);
+  background:
+    linear-gradient(180deg, #1f5dc4 0 28px, #102039 28px 100%);
+  box-shadow: inset 0 1px 0 #77a6ff, inset 0 -1px 0 var(--line-light);
 }
 
 .hero__content {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 48px 20px 36px;
+  padding: 44px 20px 34px;
   display: flex;
   flex-direction: column-reverse;
   gap: 32px;
@@ -57,8 +66,11 @@ a {
 .hero__image {
   width: 100%;
   height: auto;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 4px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.45);
   filter: contrast(1.15) brightness(0.9);
   display: block;
 }
@@ -77,6 +89,12 @@ a {
 
 .eyebrow {
   margin: 0;
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  background: #10182a;
   color: var(--accent-2);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -87,6 +105,8 @@ h1 {
   margin: 8px 0 12px;
   line-height: 1.25;
   font-size: clamp(1.6rem, 2vw + 1rem, 2.5rem);
+  color: #f7fbff;
+  text-shadow: 2px 2px 0 #000;
 }
 
 .hero__lead {
@@ -105,24 +125,38 @@ input[type="search"] {
   flex: 1;
   min-width: 280px;
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: #10141b;
+  padding: 10px 12px;
+  border: 2px solid var(--line-dark);
+  border-right-color: var(--line-light);
+  border-bottom-color: var(--line-light);
+  border-radius: 2px;
+  background: #070a10;
   color: var(--text);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.55);
 }
 
 button {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--panel-2);
+  padding: 10px 14px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #30384d 0%, #171c28 100%);
   color: var(--text);
   cursor: pointer;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 button:hover {
-  background: #2a3242;
+  background: linear-gradient(180deg, #3b4660 0%, #202739 100%);
+  color: #ffffff;
+}
+
+button:active {
+  border-color: var(--line-dark);
+  border-right-color: var(--line-light);
+  border-bottom-color: var(--line-light);
+  transform: translate(1px, 1px);
 }
 
 .layout {
@@ -138,17 +172,22 @@ button:hover {
   position: sticky;
   top: 14px;
   align-self: start;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 4px;
   background: var(--panel);
   padding: 16px;
   max-height: calc(100vh - 30px);
   overflow: auto;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .sidebar h2 {
   margin: 0;
   font-size: 1rem;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .sidebar__header {
@@ -156,13 +195,16 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
+  margin: -8px -8px 12px;
+  padding: 6px 8px;
+  border: 1px solid #2d5faf;
+  background: linear-gradient(90deg, var(--titlebar), #0c1c3a);
 }
 
 .sidebar__toggle {
   display: none;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 0.86rem;
   white-space: nowrap;
 }
@@ -176,6 +218,9 @@ button:hover {
 }
 
 #tocList a {
+  display: block;
+  padding: 2px 4px;
+  border: 1px dotted transparent;
   text-decoration: none;
   color: var(--text);
   opacity: 0.9;
@@ -188,6 +233,8 @@ button:hover {
 }
 
 #tocList a:hover {
+  border-color: var(--accent);
+  background: #0d1422;
   color: var(--accent);
 }
 
@@ -199,12 +246,26 @@ button:hover {
 .quick-guide,
 .timeline,
 .markdown-body {
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 4px;
   background: var(--panel);
   padding: 18px;
   content-visibility: auto;
   contain-intrinsic-size: 1px 900px;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.quick-guide h2,
+.timeline h2,
+.markdown-body h2 {
+  margin-top: 0;
+  padding: 4px 8px;
+  border: 1px solid #2d5faf;
+  background: linear-gradient(90deg, var(--titlebar), #0d1d3a);
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .guide-grid {
@@ -214,9 +275,11 @@ button:hover {
 }
 
 .guide-card {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #131824;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 3px;
+  background: #111724;
   padding: 12px;
 }
 
@@ -276,8 +339,9 @@ button:hover {
 .markdown-body blockquote {
   margin-left: 0;
   padding: 10px 12px;
-  border-left: 3px solid var(--accent-2);
-  background: #111827;
+  border: 1px solid var(--line-light);
+  border-left: 5px solid var(--accent-2);
+  background: #0f1624;
 }
 
 .markdown-body mark {
@@ -292,31 +356,33 @@ button:hover {
   justify-content: flex-end;
   margin: 28px 0 8px;
   padding-top: 16px;
-  border-top: 1px solid var(--line);
+  border-top: 1px dotted var(--line-light);
 }
 
 .back-to-toc__link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #131824;
+  padding: 7px 12px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #263047, #131824);
   color: var(--accent);
   text-decoration: none;
   font-size: 0.92rem;
 }
 
 .back-to-toc__link:hover {
-  background: var(--panel-2);
+  background: linear-gradient(180deg, #33405d, #1c2435);
   color: var(--text);
 }
 
 /* コールアウト（枠囲み）のスタイル */
 .callout {
   padding: 16px 18px;
-  border-radius: 8px;
+  border-radius: 3px;
   margin: 24px 0;
   border-left: 4px solid var(--line);
   background: var(--panel-2);
@@ -360,9 +426,11 @@ button:hover {
   max-height: 400px;
   width: auto;
   height: auto;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
   display: block;
   margin: 0 auto;
 }
@@ -375,7 +443,8 @@ button:hover {
 }
 
 .footer {
-  border-top: 1px solid var(--line);
+  border-top: 2px solid var(--line-dark);
+  box-shadow: inset 0 1px 0 var(--line-light);
   color: var(--muted);
   text-align: center;
   padding: 16px 12px 26px;
@@ -435,7 +504,7 @@ button:hover {
   .markdown-body,
   .sidebar {
     padding: 14px;
-    border-radius: 10px;
+    border-radius: 4px;
   }
 
   .timeline span {
