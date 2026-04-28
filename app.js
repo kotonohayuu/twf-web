@@ -12,6 +12,8 @@ const FALLBACK_NOTE = `
 `;
 
 const markdownContainer = document.getElementById("markdownContainer");
+const layoutContainer = document.querySelector(".layout");
+const tocSidebar = document.getElementById("tocSidebar");
 const tocList = document.getElementById("tocList");
 const tocNav = document.getElementById("tocNav");
 const tocToggleButton = document.getElementById("tocToggleButton");
@@ -350,6 +352,44 @@ function wireTocToggle() {
   syncByViewport();
 }
 
+function addBackToTocLinks() {
+  if (!markdownContainer || !tocSidebar) return;
+
+  const headings = Array.from(markdownContainer.querySelectorAll("h2"));
+  headings.forEach((heading, index) => {
+    const backToToc = document.createElement("div");
+    const link = document.createElement("a");
+    const headingText = heading.textContent?.trim() || "この章";
+
+    backToToc.className = "back-to-toc";
+    link.className = "back-to-toc__link";
+    link.href = "#tocSidebar";
+    link.textContent = "↑ 目次へ戻る";
+    link.setAttribute("aria-label", `${headingText}を読み終えて目次へ戻る`);
+    backToToc.appendChild(link);
+
+    markdownContainer.insertBefore(backToToc, headings[index + 1] ?? null);
+  });
+}
+
+function wireBackToTocLinks() {
+  if (!markdownContainer || !tocSidebar) return;
+
+  markdownContainer.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const link = event.target.closest(".back-to-toc__link");
+    if (!link) return;
+
+    event.preventDefault();
+    if (tocNav?.hidden && tocToggleButton) {
+      tocNav.hidden = false;
+      tocToggleButton.setAttribute("aria-expanded", "true");
+      tocToggleButton.textContent = "目次を閉じる";
+    }
+    (layoutContainer ?? tocSidebar).scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function clearHighlights() {
   const marks = markdownContainer.querySelectorAll("mark");
   marks.forEach((mark) => {
@@ -371,6 +411,7 @@ function highlightKeyword(keyword) {
     acceptNode(node) {
       if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
       if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement.closest(".back-to-toc")) return NodeFilter.FILTER_REJECT;
       if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -475,7 +516,9 @@ async function init() {
   markdownContainer.innerHTML = sanitizeGeneratedHtml(rendered);
   requestAnimationFrame(() => {
     buildToc();
+    addBackToTocLinks();
     wireTocToggle();
+    wireBackToTocLinks();
     wireSearch();
     summaryStatus.textContent = loadedFromFile
       ? ""

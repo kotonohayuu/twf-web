@@ -287,6 +287,32 @@ button:hover {
   border-radius: 2px;
 }
 
+.back-to-toc {
+  display: flex;
+  justify-content: flex-end;
+  margin: 28px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.back-to-toc__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #131824;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.back-to-toc__link:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
 /* コールアウト（枠囲み）のスタイル */
 .callout {
   padding: 16px 18px;
@@ -414,5 +440,13 @@ button:hover {
 
   .timeline span {
     min-width: 84px;
+  }
+
+  .back-to-toc {
+    justify-content: stretch;
+  }
+
+  .back-to-toc__link {
+    width: 100%;
   }
 }
