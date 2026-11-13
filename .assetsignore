@@ -1,0 +1,4 @@
+*.ps1
+/DEPLOY.md
+/PROJECT_RULES.md
+/vercel.json

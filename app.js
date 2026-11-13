@@ -8,7 +8,7 @@ const FALLBACK_NOTE = `
 1. \`twf-web\` フォルダ内に \`note.md\` を配置する  
 2. ブラウザを再読み込みする
 
-※ Vercel運用では、\`note.md\` のみを更新対象にする構成がおすすめです。
+※ Cloudflare Pages / GitHub連携運用では、\`note.md\` を更新して Push する構成がおすすめです。
 `;
 
 const markdownContainer = document.getElementById("markdownContainer");
@@ -20,23 +20,11 @@ const tocToggleButton = document.getElementById("tocToggleButton");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
 const clearSearchButton = document.getElementById("clearSearchButton");
+const searchToolbar = document.getElementById("searchToolbar");
+const searchNav = document.getElementById("searchNav");
+const prevMatchButton = document.getElementById("prevMatchButton");
+const nextMatchButton = document.getElementById("nextMatchButton");
 const summaryStatus = document.getElementById("summaryStatus");
-
-const slugCounts = new Map();
-
-function slugify(text) {
-  const base = text
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\wぁ-んァ-ン一-龥ー\- ]+/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-  const fallback = base || "section";
-  const seen = slugCounts.get(fallback) ?? 0;
-  slugCounts.set(fallback, seen + 1);
-  return seen === 0 ? fallback : `${fallback}-${seen + 1}`;
-}
 
 function escapeHtml(text) {
   return text
@@ -93,24 +81,30 @@ function renderImage(altText, src) {
 }
 
 function normalizeSource(raw) {
-  return raw.replace(/^---[\s\S]*?##\s*/m, "## ");
+  return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
 }
 
 function simpleMarkdownToHtml(markdown) {
   const lines = markdown.split(/\r?\n/);
   const html = [];
-  let inUl = false;
+  const ulIndents = [];
   let inOl = false;
   let inQuote = false;
   let quoteType = "";
 
+  const closeUl = () => {
+    while (ulIndents.length > 0) {
+      ulIndents.pop();
+      html.push("</li></ul>");
+    }
+  };
+
   const closeAll = () => {
-    if (inUl) html.push("</ul>");
+    closeUl();
     if (inOl) html.push("</ol>");
     if (inQuote) {
       html.push(quoteType === "default" ? "</blockquote>" : "</div>");
     }
-    inUl = false;
     inOl = false;
     inQuote = false;
     quoteType = "";
@@ -144,8 +138,8 @@ function simpleMarkdownToHtml(markdown) {
       continue;
     }
 
-    if (trimmed.startsWith("> ")) {
-      let text = trimmed.slice(2);
+    if (trimmed === ">" || trimmed.startsWith("> ")) {
+      let text = trimmed === ">" ? "" : trimmed.slice(2);
       if (!inQuote) {
         closeAll();
         inQuote = true;
@@ -176,14 +170,28 @@ function simpleMarkdownToHtml(markdown) {
       continue;
     }
 
-    const ul = trimmed.match(/^-+\s+(.+)$/);
-    if (ul) {
-      if (!inUl) {
+    const ulMatch = line.match(/^(\s*)-+\s+(.+)$/);
+    if (ulMatch) {
+      if (inOl || inQuote) {
         closeAll();
-        inUl = true;
-        html.push("<ul>");
       }
-      html.push(`<li>${formatInline(ul[1])}</li>`);
+      const indent = ulMatch[1].replace(/\t/g, "  ").length;
+      const itemHtml = formatInline(ulMatch[2]);
+
+      if (ulIndents.length === 0) {
+        ulIndents.push(indent);
+        html.push(`<ul><li>${itemHtml}`);
+      } else if (indent > ulIndents[ulIndents.length - 1]) {
+        ulIndents.push(indent);
+        html.push(`<ul><li>${itemHtml}`);
+      } else {
+        html.push("</li>");
+        while (ulIndents.length > 1 && indent < ulIndents[ulIndents.length - 1]) {
+          ulIndents.pop();
+          html.push("</ul></li>");
+        }
+        html.push(`<li>${itemHtml}`);
+      }
       continue;
     }
 
@@ -323,7 +331,7 @@ function buildToc() {
 function wireTocToggle() {
   if (!tocNav || !tocToggleButton) return;
 
-  const mobileQuery = window.matchMedia("(max-width: 640px)");
+  const compactQuery = window.matchMedia("(max-width: 960px)");
 
   const applyCollapsedState = (collapsed) => {
     tocNav.hidden = collapsed;
@@ -332,21 +340,24 @@ function wireTocToggle() {
   };
 
   const syncByViewport = () => {
-    if (mobileQuery.matches) {
-      applyCollapsedState(true);
-      return;
-    }
-    applyCollapsedState(false);
+    applyCollapsedState(compactQuery.matches);
   };
 
   tocToggleButton.addEventListener("click", () => {
     applyCollapsedState(!tocNav.hidden);
   });
 
-  if (typeof mobileQuery.addEventListener === "function") {
-    mobileQuery.addEventListener("change", syncByViewport);
+  tocList?.addEventListener("click", (event) => {
+    if (!compactQuery.matches) return;
+    if (event.target instanceof Element && event.target.closest("a")) {
+      applyCollapsedState(true);
+    }
+  });
+
+  if (typeof compactQuery.addEventListener === "function") {
+    compactQuery.addEventListener("change", syncByViewport);
   } else {
-    mobileQuery.addListener(syncByViewport);
+    compactQuery.addListener(syncByViewport);
   }
 
   syncByViewport();
@@ -402,10 +413,10 @@ function clearHighlights() {
 
 function highlightKeyword(keyword) {
   clearHighlights();
-  if (!keyword) return 0;
+  if (!keyword) return [];
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(escaped, "gi");
-  let count = 0;
+  const createdMarks = [];
 
   const walker = document.createTreeWalker(markdownContainer, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -433,49 +444,86 @@ function highlightKeyword(keyword) {
       const mark = document.createElement("mark");
       mark.textContent = matched;
       fragment.append(mark);
+      createdMarks.push(mark);
       cursor = start + matched.length;
-      count += 1;
       return matched;
     });
     if (cursor < text.length) fragment.append(text.slice(cursor));
     textNode.parentNode?.replaceChild(fragment, textNode);
   });
 
-  return count;
-}
-
-function scrollToFirstMark() {
-  const firstMark = markdownContainer.querySelector("mark");
-  if (!firstMark) return;
-  firstMark.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-function updateSearchStatus(keyword, count) {
-  if (!keyword) {
-    summaryStatus.textContent = "";
-    summaryStatus.classList.remove("error");
-    return;
-  }
-  summaryStatus.textContent = `「${keyword}」の一致: ${count}件`;
-  summaryStatus.classList.toggle("error", count === 0);
+  return createdMarks;
 }
 
 function wireSearch() {
   if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
   let inputDebounceTimer = null;
+  let currentKeyword = "";
+  let currentMatches = [];
+  let activeMatchIndex = -1;
 
-  const runSearch = ({ shouldScroll } = { shouldScroll: false }) => {
-    const keyword = searchInput.value.trim();
-    const count = highlightKeyword(keyword);
-    updateSearchStatus(keyword, count);
-    if (shouldScroll && keyword && count > 0) {
-      scrollToFirstMark();
+  const updateSearchUi = (keyword) => {
+    if (!keyword) {
+      summaryStatus.textContent = "";
+      summaryStatus.classList.remove("error");
+      if (searchNav) searchNav.hidden = true;
+      if (searchToolbar) searchToolbar.classList.remove("is-active");
+      return;
     }
+
+    const total = currentMatches.length;
+    if (total === 0) {
+      summaryStatus.textContent = `「${keyword}」の一致: 0件`;
+      summaryStatus.classList.add("error");
+      if (searchNav) searchNav.hidden = true;
+      if (searchToolbar) searchToolbar.classList.add("is-active");
+      return;
+    }
+
+    const positionLabel = activeMatchIndex >= 0 ? `${activeMatchIndex + 1} / ${total}件` : `${total}件`;
+    summaryStatus.textContent = `「${keyword}」の一致: ${positionLabel}`;
+    summaryStatus.classList.remove("error");
+    if (searchNav) searchNav.hidden = false;
+    if (searchToolbar) searchToolbar.classList.add("is-active");
   };
 
-  searchButton.addEventListener("click", () => runSearch({ shouldScroll: true }));
+  const focusMatch = (index) => {
+    if (currentMatches.length === 0) return;
+    if (activeMatchIndex >= 0 && currentMatches[activeMatchIndex]) {
+      currentMatches[activeMatchIndex].classList.remove("is-active");
+    }
+    const total = currentMatches.length;
+    activeMatchIndex = ((index % total) + total) % total;
+    const target = currentMatches[activeMatchIndex];
+    target.classList.add("is-active");
+    updateSearchUi(currentKeyword);
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const runSearch = ({ shouldScroll, step = 1 } = { shouldScroll: false, step: 1 }) => {
+    const keyword = searchInput.value.trim();
+    if (shouldScroll && keyword && keyword === currentKeyword && currentMatches.length > 0) {
+      focusMatch(activeMatchIndex + step);
+      return;
+    }
+
+    currentKeyword = keyword;
+    currentMatches = highlightKeyword(keyword);
+    activeMatchIndex = -1;
+
+    if (shouldScroll && keyword && currentMatches.length > 0) {
+      focusMatch(step < 0 ? currentMatches.length - 1 : 0);
+      return;
+    }
+    updateSearchUi(keyword);
+  };
+
+  searchButton.addEventListener("click", () => runSearch({ shouldScroll: true, step: 1 }));
   searchInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") runSearch({ shouldScroll: true });
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runSearch({ shouldScroll: true, step: event.shiftKey ? -1 : 1 });
+    }
   });
   searchInput.addEventListener("input", () => {
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
@@ -484,15 +532,31 @@ function wireSearch() {
     }, 180);
   });
 
+  prevMatchButton?.addEventListener("click", () => focusMatch(activeMatchIndex - 1));
+  nextMatchButton?.addEventListener("click", () => focusMatch(activeMatchIndex + 1));
+
   clearSearchButton.addEventListener("click", () => {
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
     searchInput.value = "";
+    currentKeyword = "";
+    currentMatches = [];
+    activeMatchIndex = -1;
     clearHighlights();
-    updateSearchStatus("", 0);
+    updateSearchUi("");
     searchInput.focus();
   });
 
-  updateSearchStatus("", 0);
+  updateSearchUi("");
+}
+
+function scrollToLocationHash() {
+  const rawHash = window.location.hash;
+  if (!rawHash || rawHash.length <= 1) return;
+  const targetId = decodeURIComponent(rawHash.slice(1));
+  const target = document.getElementById(targetId);
+  if (target) {
+    target.scrollIntoView({ block: "start" });
+  }
 }
 
 async function init() {
@@ -520,9 +584,11 @@ async function init() {
     wireTocToggle();
     wireBackToTocLinks();
     wireSearch();
-    summaryStatus.textContent = loadedFromFile
-      ? ""
-      : "note.md が未配置のため、案内テキストを表示中です。";
+    if (!loadedFromFile) {
+      summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
+      searchToolbar?.classList.add("is-active");
+    }
+    scrollToLocationHash();
   });
 }
 

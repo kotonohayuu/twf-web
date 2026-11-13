@@ -3,10 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="The Walten Files 考察ノートのビジュアルアーカイブ。ファイル1〜4、隠し動画、時系列年表、登場人物情報を章ごとの目次と検索で整理。"
+    />
     <title>The Walten Files 考察サイト</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body id="top">
     <header class="hero">
       <div class="hero__content">
         <div class="hero__text">
@@ -86,19 +90,29 @@
             <li><span>1978</span> Relocate Project始動、施設関連映像群。</li>
             <li><span>1982</span> ブライアン調査録画 / BunnyFarm関連記録。</li>
             <li><span>2020-2023</span> Lucky You, Guilty, souvenir, Spectacle公開。</li>
+            <li><span>2024/02/09</span> ファイル4「CyberFun Tech」公開。</li>
           </ol>
         </section>
 
         <section>
           <h2>本文アーカイブ</h2>
-          <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
+          <div id="searchToolbar" class="search-toolbar">
+            <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
+            <div id="searchNav" class="search-nav" hidden>
+              <button id="prevMatchButton" type="button" aria-label="前の一致箇所へ">↑ 前へ</button>
+              <button id="nextMatchButton" type="button" aria-label="次の一致箇所へ">↓ 次へ</button>
+            </div>
+          </div>
           <article id="markdownContainer" class="markdown-body"></article>
         </section>
       </section>
     </main>
 
     <footer class="footer">
-      <p>Source: The Walten Files 考察ノート.md / Built for readable coverage.</p>
+      <p>
+        Source: The Walten Files 考察ノート.md / Built for readable coverage.
+        <a href="#top" class="footer__top">↑ ページ上部へ</a>
+      </p>
     </footer>
 
     <script src="./app.js" defer></script>

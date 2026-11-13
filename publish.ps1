@@ -1,9 +1,12 @@
+param(
+  [string]$ProjectName = "twf-web"
+)
+
 $ErrorActionPreference = "Stop"
 
-$vercel = Join-Path $env:APPDATA "npm\vercel.cmd"
-if (-not (Test-Path $vercel)) {
-  throw "Vercel CLI not found at $vercel"
+$syncScript = Join-Path $PSScriptRoot "sync-note.ps1"
+if (Test-Path (Join-Path $PSScriptRoot "..\The Walten Files*")) {
+  & $syncScript
 }
 
-& (Join-Path $PSScriptRoot "sync-note.ps1")
-& $vercel --prod --yes
+npx --yes wrangler pages deploy $PSScriptRoot --project-name $ProjectName --branch main
