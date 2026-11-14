@@ -205,7 +205,7 @@ function simpleMarkdownToHtml(markdown) {
 
     closeAll();
     const formatted = formatInline(trimmed);
-    if (formatted.startsWith("<strong>隠し要素：</strong>") || formatted.startsWith("<strong>隠し要素:</strong>")) {
+    if (/^<strong>(?:重要な点|隠し要素)[：:]<\/strong>/.test(formatted)) {
       html.push(`<div class="callout callout-secret"><p>${formatted}</p></div>`);
     } else {
       html.push(`<p>${formatted}</p>`);
