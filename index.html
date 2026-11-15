@@ -204,6 +204,11 @@
 
         <section class="timeline">
           <h2>主要年表（要点）</h2>
+          <details id="timelineSpoiler" class="guide-spoiler guide-spoiler--flush">
+            <summary class="guide-spoiler__summary">
+              <span class="guide-spoiler__label guide-spoiler__label--closed">主要年表を開く（ネタバレ）</span>
+              <span class="guide-spoiler__label guide-spoiler__label--open">主要年表を閉じる</span>
+            </summary>
           <ol>
             <li><span>1967</span> フェリックスとジャックがBSIを共同で立ち上げ。</li>
             <li><span>1974/05/02</span> 飲酒事故（エド＆モリー死亡、遺体隠蔽）。</li>
@@ -215,6 +220,7 @@
             <li><span>2020-2023</span> Lucky You, Guilty, souvenir, Spectacle公開。</li>
             <li><span>2024/02/09</span> ファイル4「CyberFun Tech」公開。</li>
           </ol>
+          </details>
         </section>
 
         <section aria-label="本文">
@@ -232,6 +238,14 @@
               aria-pressed="false"
             >
               「映像で起きたこと」を畳む
+            </button>
+            <button
+              id="spoilerFoldsToggle"
+              class="fold-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              先の内容に触れる箇所をすべて開く
             </button>
           </div>
           <div id="searchToolbar" class="search-toolbar">

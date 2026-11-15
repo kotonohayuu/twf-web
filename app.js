@@ -36,9 +36,37 @@ const searchResultsToggle = document.getElementById("searchResultsToggle");
 const searchResultsList = document.getElementById("searchResultsList");
 const searchResultsNote = document.getElementById("searchResultsNote");
 const foldEventsToggle = document.getElementById("foldEventsToggle");
+const spoilerFoldsToggle = document.getElementById("spoilerFoldsToggle");
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
 const GUIDE_SPOILER_STORAGE_KEY = "twf_guide_spoiler";
+const TIMELINE_SPOILER_STORAGE_KEY = "twf_timeline_spoiler";
+const FORWARD_SPOILER_STORAGE_KEY = "twf_forward_spoilers";
+
+// note.md の目印：考察の見出し行や画像行の末尾に {ネタバレ:ファイル4} と書くと、
+// その考察（図）は「ファイル4までの内容に触れる」ものとして、開くまで畳んで表示する。
+const SPOILER_MARKER = "\\s*\\{ネタバレ[:：]\\s*([^{}]+?)\\s*\\}";
+const ANALYSIS_TITLE_WITH_MARKER = new RegExp(`^(\\*\\*.+?[：:]\\*\\*)${SPOILER_MARKER}$`);
+const IMAGE_LINE = new RegExp(`^!\\[([^\\]]*)\\]\\(([^)]+)\\)(?:${SPOILER_MARKER})?$`);
+
+function readStoredFlag(key) {
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch (_error) {
+    return false;
+  }
+}
+
+function writeStoredFlag(key, value) {
+  try {
+    window.localStorage.setItem(key, value ? "1" : "0");
+  } catch (_error) {
+    // Ignore storage errors in restricted browsing modes.
+  }
+}
+
+// 「先の内容に触れる箇所」を開いておくかどうか（読者の選択を覚えておく）。
+let forwardSpoilersOpen = readStoredFlag(FORWARD_SPOILER_STORAGE_KEY);
 
 // 検索結果の一覧：前後に出す文脈の字数と、一覧に出す件数の上限。
 const SEARCH_CONTEXT_LENGTH = 30;
@@ -161,12 +189,13 @@ function formatInline(text) {
     });
 }
 
-function renderImage(altText, src) {
+function renderImage(altText, src, spoilerUntil = "") {
   const safeSrc = sanitizeImageSrc(src);
   if (!safeSrc) {
     return `<p class="status error">危険な画像URLをブロックしました: <code>${escapeHtml(src)}</code></p>`;
   }
-  return `<figure class="wiki-figure"><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
+  const spoilerAttr = spoilerUntil ? ` data-spoiler-until="${escapeHtmlAttr(spoilerUntil)}"` : "";
+  return `<figure class="wiki-figure"${spoilerAttr}><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
 }
 
 function normalizeSource(raw) {
@@ -207,7 +236,7 @@ function simpleMarkdownToHtml(markdown) {
     if (t === ">" || t.startsWith("> ")) return false;
     if (/^\d+\.\s+/.test(t)) return false;
     if (/^(\s*)-+\s+/.test(candidateLine)) return false;
-    if (/^!\[([^\]]*)\]\(([^)]+)\)$/.test(t)) return false;
+    if (IMAGE_LINE.test(t)) return false;
     return true;
   };
 
@@ -298,20 +327,23 @@ function simpleMarkdownToHtml(markdown) {
     }
 
     // 画像構文: ![alt](src)
-    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    const imgMatch = trimmed.match(IMAGE_LINE);
     if (imgMatch) {
       closeAll();
-      html.push(renderImage(imgMatch[1], imgMatch[2]));
+      html.push(renderImage(imgMatch[1], imgMatch[2], imgMatch[3] || ""));
       continue;
     }
 
     // 考察段落: **見出し：** + 次行 => 一行の結論。 (+ 任意で元の本文行)
+    const markedTitle = trimmed.match(ANALYSIS_TITLE_WITH_MARKER);
+    const titleLine = markedTitle ? markedTitle[1] : trimmed;
     if (
-      /^\*\*(?!重要な点[：:]|隠し要素[：:])(.+?[：:])\*\*$/.test(trimmed) &&
+      /^\*\*(?!重要な点[：:]|隠し要素[：:])(.+?[：:])\*\*$/.test(titleLine) &&
       i + 1 < lines.length &&
       /^=>\s+(.+)$/.test(lines[i + 1].trim())
     ) {
       closeAll();
+      const spoilerAttr = markedTitle ? ` data-spoiler-until="${escapeHtmlAttr(markedTitle[2])}"` : "";
       const conclusionMatch = lines[i + 1].trim().match(/^=>\s+(.+)$/);
       const conclusionText = conclusionMatch ? conclusionMatch[1] : "";
       i += 1;
@@ -320,11 +352,11 @@ function simpleMarkdownToHtml(markdown) {
         const bodyText = lines[i + 1].trim();
         i += 1;
         html.push(
-          `<div class="analysis-block"><p class="analysis-block__title">${formatInline(trimmed)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p><p class="analysis-block__body">${formatInline(bodyText)}</p></div>`
+          `<div class="analysis-block"${spoilerAttr}><p class="analysis-block__title">${formatInline(titleLine)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p><p class="analysis-block__body">${formatInline(bodyText)}</p></div>`
         );
       } else {
         html.push(
-          `<div class="analysis-block analysis-block--list-head"><p class="analysis-block__title">${formatInline(trimmed)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p></div>`
+          `<div class="analysis-block analysis-block--list-head"${spoilerAttr}><p class="analysis-block__title">${formatInline(titleLine)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p></div>`
         );
       }
       continue;
@@ -759,7 +791,7 @@ function enhanceGlossaryTerms(glossaryItems) {
           if (excludedTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
           if (
             parent.closest(
-              "a, button, code, pre, figcaption, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card, .analysis-block__title, .analysis-block__conclusion"
+              "a, button, code, pre, figcaption, summary, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card, .analysis-block__title, .analysis-block__conclusion"
             )
           ) {
             return NodeFilter.FILTER_REJECT;
@@ -917,7 +949,20 @@ function wireGlossaryPopovers(glossaryItems) {
     const desc = document.createElement("p");
     desc.className = "term-card__desc";
     desc.textContent = entry.description;
-    content.appendChild(desc);
+    if (forwardSpoilersOpen) {
+      content.appendChild(desc);
+    } else {
+      // 説明文は結末に触れることがあるため、畳んでいる間は開くまで見せない。
+      const reveal = document.createElement("button");
+      reveal.type = "button";
+      reveal.className = "term-card__reveal";
+      reveal.textContent = "説明を開く（先の内容に触れることがある）";
+      reveal.addEventListener("click", (event) => {
+        event.stopPropagation();
+        reveal.replaceWith(desc);
+      });
+      content.appendChild(reveal);
+    }
 
     card.appendChild(content);
     wrap.appendChild(card);
@@ -1276,7 +1321,7 @@ function highlightKeyword(keyword) {
     acceptNode(node) {
       if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
       if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card")) {
+      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
         return NodeFilter.FILTER_REJECT;
       }
       if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
@@ -1343,7 +1388,7 @@ function describeMatchContext(mark) {
   const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card")) {
+      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;
@@ -1413,6 +1458,19 @@ function wireSearch() {
     }
   };
 
+  // 利用者が自分でスクロールし始めたら、位置の合わせ直しをやめる。
+  let scrollGuardToken = 0;
+  const cancelScrollGuard = () => {
+    scrollGuardToken += 1;
+  };
+  window.addEventListener("wheel", cancelScrollGuard, { passive: true });
+  window.addEventListener("touchmove", cancelScrollGuard, { passive: true });
+  window.addEventListener("keydown", (event) => {
+    if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
+      cancelScrollGuard();
+    }
+  });
+
   // 一致箇所を、上に張り付く検索バー（一覧を含む）に隠れない位置へ移動する。
   const scrollMatchIntoView = (target) => {
     const stuckBottom = () => {
@@ -1427,10 +1485,59 @@ function wireSearch() {
       applyResultsOpen();
     }
 
-    const visibleTop = stuckBottom();
-    const rect = target.getBoundingClientRect();
-    const desiredCenter = visibleTop + (window.innerHeight - visibleTop) / 2;
-    window.scrollBy({ top: rect.top + rect.height / 2 - desiredCenter, behavior: "smooth" });
+    const offsetFromDesired = () => {
+      const visibleTop = stuckBottom();
+      const rect = target.getBoundingClientRect();
+      const desiredCenter = visibleTop + (window.innerHeight - visibleTop) / 2;
+      return rect.top + rect.height / 2 - desiredCenter;
+    };
+
+    // 近い箇所へはなめらかに、遠い箇所へは一度で移動する。
+    // 途中で画像が読み込まれるとページの長さが変わり、着地位置がずれるため、
+    // 少しのあいだ位置を確かめて合わせ直す（利用者が自分で動かしたらやめる）。
+    scrollGuardToken += 1;
+    const token = scrollGuardToken;
+    const firstOffset = offsetFromDesired();
+    const isNear = Math.abs(firstOffset) < window.innerHeight * 1.5;
+    window.scrollBy({ top: firstOffset, behavior: isNear ? "smooth" : "instant" });
+
+    (isNear ? [700, 1300, 2000] : [120, 450, 1000, 1800]).forEach((delay) => {
+      window.setTimeout(() => {
+        if (token !== scrollGuardToken || !target.isConnected) return;
+        const offset = offsetFromDesired();
+        if (Math.abs(offset) > 24) {
+          window.scrollBy({ top: offset, behavior: "instant" });
+        }
+      }, delay);
+    });
+  };
+
+  // 一覧の行の文面。畳まれた箇所の文面は、一覧にも出さない。
+  const fillRowContext = (textEl, mark) => {
+    textEl.textContent = "";
+    const masked = Boolean(mark.closest("details.spoiler-fold:not([open])"));
+    textEl.classList.toggle("search-results__context--masked", masked);
+    if (masked) {
+      textEl.textContent = "（先の内容に触れる箇所。押すと開いて移動する）";
+      return;
+    }
+    const context = describeMatchContext(mark);
+    const hit = document.createElement("mark");
+    hit.textContent = mark.textContent ?? "";
+    textEl.append(context.before, hit, context.after);
+  };
+
+  const refreshMaskedRows = () => {
+    if (!searchResultsList) return;
+    searchResultsList.querySelectorAll(".search-results__item").forEach((row) => {
+      const mark = currentMatches[Number(row.dataset.matchIndex)];
+      const textEl = row.querySelector(".search-results__context");
+      if (!mark || !textEl) return;
+      const shouldMask = Boolean(mark.closest("details.spoiler-fold:not([open])"));
+      if (shouldMask !== textEl.classList.contains("search-results__context--masked")) {
+        fillRowContext(textEl, mark);
+      }
+    });
   };
 
   const renderResultList = () => {
@@ -1447,7 +1554,6 @@ function wireSearch() {
     const chapterCache = new Map();
     const fragment = document.createDocumentFragment();
     currentMatches.slice(0, SEARCH_LIST_LIMIT).forEach((mark, index) => {
-      const context = describeMatchContext(mark);
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
@@ -1460,9 +1566,7 @@ function wireSearch() {
 
       const text = document.createElement("span");
       text.className = "search-results__context";
-      const hit = document.createElement("mark");
-      hit.textContent = mark.textContent ?? "";
-      text.append(context.before, hit, context.after);
+      fillRowContext(text, mark);
 
       button.append(where, text);
       item.appendChild(button);
@@ -1497,13 +1601,18 @@ function wireSearch() {
     }
 
     const positionLabel = activeMatchIndex >= 0 ? `${activeMatchIndex + 1} / ${total}件` : `${total}件`;
-    summaryStatus.textContent = `「${keyword}」の一致: ${positionLabel}`;
+    const inClosedFold =
+      activeMatchIndex >= 0 &&
+      Boolean(currentMatches[activeMatchIndex]?.closest("details.spoiler-fold:not([open])"));
+    summaryStatus.textContent = `「${keyword}」の一致: ${positionLabel}${inClosedFold ? "（畳まれた箇所の中）" : ""}`;
     summaryStatus.classList.remove("error");
     if (searchNav) searchNav.hidden = false;
     if (searchToolbar) searchToolbar.classList.add("is-active");
   };
 
-  const focusMatch = (index) => {
+  // reveal が真のとき（一覧の行を押したとき）だけ、畳まれた「先の内容に触れる箇所」を開く。
+  // 「検索」「前へ／次へ」では開かず、その箇所の開閉ボタンの位置へ移動する。
+  const focusMatch = (index, { reveal = false } = {}) => {
     if (currentMatches.length === 0) return;
     if (activeMatchIndex >= 0 && currentMatches[activeMatchIndex]) {
       currentMatches[activeMatchIndex].classList.remove("is-active");
@@ -1512,10 +1621,15 @@ function wireSearch() {
     activeMatchIndex = ((index % total) + total) % total;
     const target = currentMatches[activeMatchIndex];
     ensureSectionExpandedFor(target);
+    if (reveal) {
+      revealSpoilerFoldFor(target);
+      refreshMaskedRows();
+    }
     target.classList.add("is-active");
     updateSearchUi(currentKeyword);
     syncActiveResultRow();
-    scrollMatchIntoView(target);
+    const closedFold = target.closest("details.spoiler-fold:not([open])");
+    scrollMatchIntoView(closedFold?.querySelector(":scope > summary") ?? target);
   };
 
   const runSearch = ({ shouldScroll, step = 1 } = { shouldScroll: false, step: 1 }) => {
@@ -1583,32 +1697,125 @@ function wireSearch() {
       resultsOpen = false;
       applyResultsOpen();
     }
-    focusMatch(index);
+    focusMatch(index, { reveal: true });
   });
+
+  // 畳まれた箇所が開閉されたら、一覧の伏せた行と件数表示を合わせ直す。
+  markdownContainer.addEventListener(
+    "toggle",
+    (event) => {
+      if (event.target instanceof HTMLDetailsElement && currentMatches.length > 0) {
+        refreshMaskedRows();
+        updateSearchUi(currentKeyword);
+      }
+    },
+    true
+  );
 
   updateSearchUi("");
 }
 
-// クイックガイドのネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
-function wireGuideSpoiler() {
-  const details = document.getElementById("guideSpoiler");
+// クイックガイドと主要年表のネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
+function wireRememberedDetails(elementId, storageKey) {
+  const details = document.getElementById(elementId);
   if (!(details instanceof HTMLDetailsElement)) return;
-
-  try {
-    if (window.localStorage.getItem(GUIDE_SPOILER_STORAGE_KEY) === "1") {
-      details.open = true;
-    }
-  } catch (_error) {
-    // Ignore storage errors in restricted browsing modes.
+  if (readStoredFlag(storageKey)) {
+    details.open = true;
   }
-
   details.addEventListener("toggle", () => {
-    try {
-      window.localStorage.setItem(GUIDE_SPOILER_STORAGE_KEY, details.open ? "1" : "0");
-    } catch (_error) {
-      // Ignore storage errors in restricted browsing modes.
-    }
+    writeStoredFlag(storageKey, details.open);
   });
+}
+
+function wireGuideSpoiler() {
+  wireRememberedDetails("guideSpoiler", GUIDE_SPOILER_STORAGE_KEY);
+  wireRememberedDetails("timelineSpoiler", TIMELINE_SPOILER_STORAGE_KEY);
+}
+
+// 本文：目印（data-spoiler-until）の付いた考察と図を、開閉できる枠に入れる。
+function createSpoilerFold(until, kind) {
+  const details = document.createElement("details");
+  details.className = "spoiler-fold";
+  details.open = forwardSpoilersOpen;
+
+  const summary = document.createElement("summary");
+  summary.className = "spoiler-fold__summary";
+  const base = `『${until}』までの内容${kind === "figure" ? "を含む図" : "に触れる考察"}`;
+  const closedLabel = document.createElement("span");
+  closedLabel.className = "spoiler-fold__label spoiler-fold__label--closed";
+  closedLabel.textContent = `${base}を開く`;
+  const openLabel = document.createElement("span");
+  openLabel.className = "spoiler-fold__label spoiler-fold__label--open";
+  openLabel.textContent = `${base}を閉じる`;
+  summary.append(closedLabel, openLabel);
+  details.appendChild(summary);
+  return details;
+}
+
+function enhanceSpoilerFolds() {
+  if (!markdownContainer) return;
+
+  markdownContainer.querySelectorAll(".analysis-block[data-spoiler-until]").forEach((block) => {
+    const title = block.querySelector(":scope > .analysis-block__title");
+    if (!title) return;
+    const details = createSpoilerFold(block.dataset.spoilerUntil || "", "analysis");
+    while (title.nextSibling) {
+      details.appendChild(title.nextSibling);
+    }
+    // 見出しと結論だけの型では、続く箇条書きが本文にあたるので一緒に入れる。
+    const following = block.nextElementSibling;
+    if (block.classList.contains("analysis-block--list-head") && following?.tagName === "UL") {
+      details.appendChild(following);
+    }
+    block.appendChild(details);
+  });
+
+  markdownContainer.querySelectorAll("figure[data-spoiler-until]").forEach((figure) => {
+    const details = createSpoilerFold(figure.dataset.spoilerUntil || "", "figure");
+    details.classList.add("wiki-spoiler");
+    figure.parentNode?.insertBefore(details, figure);
+    details.appendChild(figure);
+  });
+}
+
+function syncSpoilerFoldsToggleUi() {
+  if (!spoilerFoldsToggle) return;
+  spoilerFoldsToggle.setAttribute("aria-pressed", String(forwardSpoilersOpen));
+  spoilerFoldsToggle.textContent = forwardSpoilersOpen
+    ? "先の内容に触れる箇所を畳む"
+    : "先の内容に触れる箇所をすべて開く";
+}
+
+function wireSpoilerFolds() {
+  syncSpoilerFoldsToggleUi();
+  spoilerFoldsToggle?.addEventListener("click", () => {
+    forwardSpoilersOpen = !forwardSpoilersOpen;
+    writeStoredFlag(FORWARD_SPOILER_STORAGE_KEY, forwardSpoilersOpen);
+    markdownContainer?.querySelectorAll("details.spoiler-fold").forEach((details) => {
+      details.open = forwardSpoilersOpen;
+    });
+    syncSpoilerFoldsToggleUi();
+    window.dispatchEvent(new Event("resize"));
+  });
+  // 個別に開閉したときも、現在地の表示などを計算し直す。
+  markdownContainer?.addEventListener(
+    "toggle",
+    (event) => {
+      if (event.target instanceof HTMLDetailsElement) {
+        window.dispatchEvent(new Event("resize"));
+      }
+    },
+    true
+  );
+}
+
+// 一致箇所や移動先が、畳まれた「先の内容に触れる箇所」の中にあれば開く。
+function revealSpoilerFoldFor(node) {
+  if (!(node instanceof Element)) return;
+  const closedFold = node.closest("details.spoiler-fold:not([open])");
+  if (closedFold instanceof HTMLDetailsElement) {
+    closedFold.open = true;
+  }
 }
 
 function wireSearchPlaceholder() {
@@ -1683,9 +1890,11 @@ async function init() {
     prepareHeadingMetadata();
     addBackToTocLinks();
     enhanceSections();
+    enhanceSpoilerFolds();
     enhanceGlossaryTerms(glossaryItems);
     buildToc();
     wireSectionFolding();
+    wireSpoilerFolds();
     wireGlossaryPopovers(glossaryItems);
     wireTocToggle();
     wireBackToTocLinks();

@@ -400,6 +400,53 @@ button:active {
   display: none;
 }
 
+.guide-spoiler--flush {
+  margin-top: 0;
+}
+
+/* 本文：後の章の内容に触れる考察・図は、開くまで見せない */
+.spoiler-fold {
+  margin: 6px 0 0;
+}
+
+.wiki-spoiler {
+  margin: 20px 0;
+}
+
+.spoiler-fold__summary {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px dashed var(--line-light);
+  border-radius: 2px;
+  background: #0d1422;
+  color: var(--muted);
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.spoiler-fold__summary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.spoiler-fold[open] > .spoiler-fold__summary {
+  margin-bottom: 8px;
+}
+
+.spoiler-fold[open] .spoiler-fold__label--closed,
+.spoiler-fold:not([open]) .spoiler-fold__label--open {
+  display: none;
+}
+
+.term-card__reveal {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+
+.search-results__context--masked {
+  color: var(--muted);
+}
+
 .guide-card h3 {
   margin: 0 0 8px;
   font-size: 1rem;
