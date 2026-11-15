@@ -35,6 +35,22 @@ const foldEventsToggle = document.getElementById("foldEventsToggle");
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
 
+// 再読み込みのときは、前回の位置やURLの #見出し ではなく、ページの最上部から表示する。
+function isReloadNavigation() {
+  try {
+    const entries = performance.getEntriesByType("navigation");
+    if (entries.length > 0) return entries[0].type === "reload";
+    return Boolean(performance.navigation && performance.navigation.type === 1);
+  } catch (_error) {
+    return false;
+  }
+}
+
+const IS_RELOAD = isReloadNavigation();
+if (IS_RELOAD && "scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
 const SECTION_CATEGORY_LABELS = {
   event: "映像で起きたこと",
   analysis: "読み（考察・仮説）",
@@ -448,6 +464,11 @@ function createTocItemElement(heading) {
     yearSpan.className = "year-tag";
     yearSpan.textContent = yearLabel;
     link.appendChild(yearSpan);
+  } else if (link.dataset.level === "3") {
+    const spacer = document.createElement("span");
+    spacer.className = "year-tag year-tag--empty";
+    spacer.setAttribute("aria-hidden", "true");
+    link.appendChild(spacer);
   }
 
   const titleSpan = document.createElement("span");
@@ -489,8 +510,10 @@ function setSectionCollapsed(sectionEl, collapsed) {
   }
   const foldBtn = sectionEl.querySelector(":scope > h3 > .sec-fold-btn");
   if (foldBtn instanceof HTMLButtonElement) {
+    const label = collapsed ? "開く" : "畳む";
     foldBtn.setAttribute("aria-expanded", String(!collapsed));
-    foldBtn.textContent = collapsed ? "開く" : "畳む";
+    foldBtn.textContent = label;
+    foldBtn.setAttribute("aria-label", `${label}：${foldBtn.dataset.secTitle || "この節"}`);
   }
 }
 
@@ -542,7 +565,8 @@ function enhanceSections() {
       foldBtn.type = "button";
       foldBtn.className = "sec-fold-btn";
       foldBtn.setAttribute("aria-expanded", "true");
-      foldBtn.setAttribute("aria-label", `${h3.dataset.cleanTitle || "この節"}を開閉`);
+      foldBtn.dataset.secTitle = h3.dataset.cleanTitle || "この節";
+      foldBtn.setAttribute("aria-label", `畳む：${foldBtn.dataset.secTitle}`);
       foldBtn.textContent = "畳む";
       h3.appendChild(foldBtn);
     }
@@ -1310,6 +1334,26 @@ function wireSearch() {
   updateSearchUi("");
 }
 
+function wireSearchPlaceholder() {
+  if (!searchInput) return;
+  const fullText = searchInput.getAttribute("placeholder") || "";
+  const shortText = "キーワード検索";
+  const context = document.createElement("canvas").getContext("2d");
+  if (!fullText || !context) return;
+
+  const apply = () => {
+    const style = window.getComputedStyle(searchInput);
+    context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const innerWidth =
+      searchInput.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const fits = context.measureText(fullText).width <= innerWidth;
+    searchInput.setAttribute("placeholder", fits ? fullText : shortText);
+  };
+
+  apply();
+  window.addEventListener("resize", apply, { passive: true });
+}
+
 function scrollToLocationHash() {
   const rawHash = window.location.hash;
   if (!rawHash || rawHash.length <= 1) return;
@@ -1324,6 +1368,7 @@ function scrollToLocationHash() {
 async function init() {
   if (!summaryStatus) return;
   summaryStatus.textContent = "";
+  wireSearchPlaceholder();
 
   let markdown = FALLBACK_NOTE;
   let loadedFromFile = false;
@@ -1373,7 +1418,14 @@ async function init() {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
       searchToolbar?.classList.add("is-active");
     }
-    scrollToLocationHash();
+    if (IS_RELOAD) {
+      if (window.location.hash) {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    } else {
+      scrollToLocationHash();
+    }
   });
 }
 

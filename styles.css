@@ -142,6 +142,15 @@ h1 {
   max-width: 840px;
 }
 
+/* ネタバレの注意（紹介文のすぐ下に、控えめに置く） */
+.hero__note {
+  margin: -12px 0 22px;
+  padding-left: 8px;
+  border-left: 2px solid var(--line-light);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .hero__actions {
   display: flex;
   gap: 10px;
@@ -266,6 +275,19 @@ button:active {
   color: #c8cfdb;
 }
 
+/* 年の札の列を固定幅にし、札のない節の行も見出しの左端をそろえる */
+#tocList a[data-level="3"] .year-tag,
+.toc-list a[data-level="3"] .year-tag {
+  box-sizing: border-box;
+  min-width: calc(7ch + 12px);
+  text-align: center;
+}
+
+#tocList .year-tag--empty,
+.toc-list .year-tag--empty {
+  visibility: hidden;
+}
+
 #tocList a:hover,
 .toc-list a:hover {
   border-color: var(--accent);
@@ -386,8 +408,8 @@ button:active {
 }
 
 .guide-people__avatar {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   object-fit: cover;
   object-position: 50% 6%;
   border: 1px solid var(--line-light);
@@ -831,9 +853,21 @@ button:active {
 }
 
 .sec-fold-btn {
+  position: relative;
   padding: 2px 8px;
   font-size: 0.76rem;
   margin-left: auto;
+}
+
+/* 見た目は変えず、押せる範囲だけを44×44px以上に広げる */
+.sec-fold-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 /* E. 人名・用語の一行説明ポップオーバー */
