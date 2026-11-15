@@ -1075,6 +1075,10 @@ button:active {
   white-space: nowrap;
 }
 
+.footer__credit {
+  margin: 0 0 6px;
+}
+
 /* 404ページ（現在地バーがないため、上の余白を取らない） */
 body.error-page {
   padding-top: 0;
