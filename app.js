@@ -1045,6 +1045,13 @@ function wireActiveHeadingTracker() {
   const timelineSection = document.querySelector(".timeline");
   let ticking = false;
   let lastActiveId = "";
+  // 目次やページ内リンクで最後に選ばれた見出し（ページ末尾の補正に使う）。
+  let requestedHeadingId = "";
+
+  const isHeadingOnScreen = (heading) => {
+    const rect = heading.getBoundingClientRect();
+    return rect.bottom > 0 && rect.top < window.innerHeight;
+  };
 
   const updateCurrentHeading = () => {
     ticking = false;
@@ -1061,6 +1068,31 @@ function wireActiveHeadingTracker() {
         }
       } else {
         break;
+      }
+    }
+
+    // ページの最下部では、末尾の見出しは画面の上端まで届かない。
+    // その場合は、選ばれた見出し（なければ画面内で最後の見出し）を現在地にする。
+    const atPageBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    if (atPageBottom) {
+      let bottomHeading = null;
+      const requested = requestedHeadingId
+        ? headings.find((heading) => heading.id === requestedHeadingId)
+        : null;
+      if (requested && isHeadingOnScreen(requested)) {
+        bottomHeading = requested;
+      } else {
+        for (let i = headings.length - 1; i >= 0; i -= 1) {
+          if (isHeadingOnScreen(headings[i])) {
+            bottomHeading = headings[i];
+            break;
+          }
+        }
+      }
+      if (bottomHeading && headings.indexOf(bottomHeading) > headings.indexOf(activeHeading)) {
+        activeHeading = bottomHeading;
+        activeH2 = bottomHeading.tagName === "H2" ? bottomHeading : null;
       }
     }
 
@@ -1146,6 +1178,38 @@ function wireActiveHeadingTracker() {
       requestAnimationFrame(updateCurrentHeading);
     }
   };
+
+  // 見出しへのリンクが押されたら、その見出しを覚えておく。
+  // すでに最下部にいると画面が動かず scroll が起きないため、判定も明示的にやり直す。
+  const rememberRequestedHeading = (targetId) => {
+    if (!headings.some((heading) => heading.id === targetId)) return;
+    requestedHeadingId = targetId;
+    window.setTimeout(onScrollOrResize, 0);
+  };
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const anchor = event.target.closest('a[href^="#"]');
+    const rawHref = anchor?.getAttribute("href") || "";
+    if (rawHref.length <= 1) return;
+    rememberRequestedHeading(decodeURIComponent(rawHref.slice(1)));
+  });
+
+  window.addEventListener("hashchange", () => {
+    rememberRequestedHeading(decodeURIComponent(window.location.hash.slice(1)));
+  });
+
+  // 利用者が自分でスクロールし始めたら、選ばれた見出しの記憶は捨てる。
+  const forgetRequestedHeading = () => {
+    requestedHeadingId = "";
+  };
+  window.addEventListener("wheel", forgetRequestedHeading, { passive: true });
+  window.addEventListener("touchmove", forgetRequestedHeading, { passive: true });
+  window.addEventListener("keydown", (event) => {
+    if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
+      forgetRequestedHeading();
+    }
+  });
 
   window.addEventListener("scroll", onScrollOrResize, { passive: true });
   window.addEventListener("resize", onScrollOrResize, { passive: true });
