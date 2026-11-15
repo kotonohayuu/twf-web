@@ -318,6 +318,16 @@ button:active {
   text-shadow: 1px 1px 0 #000;
 }
 
+.quick-guide__overview {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(104, 215, 255, 0.06);
+  color: var(--text);
+  max-width: var(--reading-width);
+  line-height: 1.75;
+}
+
 .guide-grid {
   display: grid;
   gap: 10px;
@@ -333,14 +343,71 @@ button:active {
   padding: 12px;
 }
 
+.guide-card--full {
+  grid-column: 1 / -1;
+}
+
 .guide-card h3 {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   font-size: 1rem;
+  color: #f3f7ff;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
 }
 
 .guide-card p {
   margin: 0;
+  color: var(--text);
+}
+
+.guide-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.guide-people li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #0d121d;
   color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.guide-people strong {
+  color: var(--text);
+}
+
+.guide-people__avatar {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  object-position: 50% 6%;
+  border: 1px solid var(--line-light);
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: #070a10;
+}
+
+.guide-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.guide-list strong {
+  color: var(--text);
 }
 
 .timeline ol {
@@ -423,12 +490,46 @@ button:active {
 .markdown-body ol,
 .markdown-body blockquote,
 .markdown-body .callout,
-.markdown-body .wiki-figure {
+.markdown-body .wiki-figure,
+.markdown-body .analysis-block {
   max-width: var(--reading-width);
 }
 
 .markdown-body p {
   margin: 0 0 1em;
+}
+
+/* F. 考察段落（見出し → 一行の結論 → 元の本文） */
+.analysis-block {
+  margin: 20px 0;
+}
+
+.analysis-block--list-head {
+  margin: 20px 0 8px;
+}
+
+.markdown-body .analysis-block__title {
+  margin: 0 0 6px;
+  color: #f3f7ff;
+  line-height: 1.55;
+}
+
+.markdown-body .analysis-block__conclusion {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  color: #fef3c7;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.markdown-body .analysis-block--list-head .analysis-block__conclusion {
+  margin-bottom: 0;
+}
+
+.markdown-body .analysis-block__body {
+  margin: 0;
 }
 
 .markdown-body hr {
@@ -813,6 +914,7 @@ button:active {
   width: 54px;
   height: 54px;
   object-fit: cover;
+  object-position: 50% 6%;
   border: 1px solid var(--line-light);
   border-radius: 2px;
   flex-shrink: 0;

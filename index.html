@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="The Walten Files 考察ノートのビジュアルアーカイブ。ファイル1〜4、隠し動画、時系列年表、登場人物情報を章ごとの目次と検索で整理。"
+      content="『The Walten Files』で描かれる1974年前後の連続失踪事件とソフィー・ウォルテンの記憶を軸に、各映像の内容・確定事実・仮説を整理した考察ノートである。"
     />
-    <title>The Walten Files 考察サイト</title>
+    <title>The Walten Files 考察ノート</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body id="top">
@@ -35,11 +35,9 @@
     <header class="hero">
       <div class="hero__content">
         <div class="hero__text">
-          <p class="eyebrow">The Walten Files</p>
-          <h1>考察ノート ビジュアルアーカイブ</h1>
+          <h1>The Walten Files 考察ノート</h1>
           <p class="hero__lead">
-            元ノートを網羅しつつ、章ごとに追いやすく整理した閲覧サイトです。
-            検索・目次・タイムラインで必要な情報へすぐ移動できます。
+            『The Walten Files』で描かれる1974年前後の連続失踪事件とソフィー・ウォルテンの記憶を軸に、各映像の内容・確定事実・仮説を整理した考察ノートである。
           </p>
           <div class="hero__actions">
             <input
@@ -80,22 +78,105 @@
       <section class="content">
         <section class="quick-guide">
           <h2>クイックガイド</h2>
+          <p class="quick-guide__overview">
+            1974年5月2日の飲酒運転事故（エドとモリーの死亡と遺体隠蔽）を起点に、Bon's Burgers関係者の失踪と殺害が連鎖する。殺害された犠牲者の肉体と魂はアニマトロニクス（バニー・シャ・ビリー）や人形（Rocket）に閉じ込められ、社内テープや業務用ゲームを通じて外部へ干渉する。薬で過去の記憶を失っていた生存者ソフィー・ウォルテンが、残された映像とゲーム筐体『BunnyFarm』を通じて1974年の事件を思い出していく。
+          </p>
           <div class="guide-grid">
-            <article class="guide-card">
+            <article class="guide-card guide-card--full">
               <h3>全体テーマ</h3>
+              <!-- 差し替え箇所：「全体テーマ」はご自身の言葉に書き直すための欄 -->
               <p>記憶と忘却、罪と隠蔽、そして「美しくする」という歪んだ論理。</p>
             </article>
-            <article class="guide-card">
+            <article class="guide-card guide-card--full">
               <h3>中心人物</h3>
-              <p>ソフィー・ウォルテンの記憶回復が、全ファイルを貫く軸として機能。</p>
+              <ul class="guide-people">
+                <li>
+                  <img
+                    src="./images/sophie_walten.webp"
+                    alt="ソフィー・ウォルテン"
+                    class="guide-people__avatar"
+                    loading="lazy"
+                  />
+                  <div>
+                    <strong>ソフィー・ウォルテン</strong>：薬で封じられていた家族と1974年の記憶を『BunnyFarm』を通じて取り戻していく生存者である。
+                  </div>
+                </li>
+                <li>
+                  <img
+                    src="./images/felix_kranken.webp"
+                    alt="フェリックス・クランケン"
+                    class="guide-people__avatar"
+                    loading="lazy"
+                  />
+                  <div>
+                    <strong>フェリックス・クランケン</strong>：飲酒運転事故でエドとモリーを死なせて森に埋め、後に移転プロジェクトを主導したBSI共同創業者である。
+                  </div>
+                </li>
+                <li>
+                  <img
+                    src="./images/jack_walten.webp"
+                    alt="ジャック・ウォルテン"
+                    class="guide-people__avatar"
+                    loading="lazy"
+                  />
+                  <div>
+                    <strong>ジャック・ウォルテン</strong>：ソフィーたちの父でBSI共同創業者。子どもたちの死の翌月（1974年6月11日）に失踪した。
+                  </div>
+                </li>
+                <li>
+                  <img
+                    src="./images/rosemary_walten.webp"
+                    alt="ローズマリー・ウォルテン"
+                    class="guide-people__avatar"
+                    loading="lazy"
+                  />
+                  <div>
+                    <strong>ローズマリー・ウォルテン</strong>：失踪した夫を探して夜の店舗を訪れ、舞台裏でボンに殺害されてシャに詰め込まれた母である。
+                  </div>
+                </li>
+                <li>
+                  <img
+                    src="./images/susan_woodings.webp"
+                    alt="スーザン・ウッディングス"
+                    class="guide-people__avatar"
+                    loading="lazy"
+                  />
+                  <div>
+                    <strong>スーザン・ウッディングス</strong>：ボンの異常を単独点検中に舞台裏で殺害され、バニーに閉じ込められたBSIリードエンジニアである。
+                  </div>
+                </li>
+              </ul>
             </article>
             <article class="guide-card">
               <h3>重要舞台</h3>
-              <p>Bon's Burgers / K-9保管施設 / BunnyFarm（ゲーム媒体）。</p>
+              <ul class="guide-list">
+                <li>
+                  <a href="#f4-08"><strong>Bon's Burgers</strong></a>：1974年6月28日に開店し、舞台裏でスーザンとローズマリーが殺害されて7月20日に閉業したレストラン。
+                </li>
+                <li>
+                  <a href="#f2-t4"><strong>K-9保管施設</strong></a>：閉店後の機体が隔離された森の地下施設。1978年にアシュリー、1982年にブライアンが殺害された。
+                </li>
+                <li>
+                  <a href="#f3-scenes"><strong>BunnyFarm（ゲーム筐体）</strong></a>：1982年にホテル地下室でソフィーがプレイし、1974年の事件と家族の記憶を呼び覚ました業務用ゲーム。
+                </li>
+                <li>
+                  <a href="#f4-12"><strong>Wonderland</strong></a>：真っ白な空間として描かれる霊的領域。「Bon（灰色の存在）」が死後の魂を器へ誘導する場である。
+                </li>
+              </ul>
             </article>
             <article class="guide-card">
               <h3>よく出るキー語</h3>
-              <p>「きれいにする」「Safety in pills」「I'm still here」。</p>
+              <ul class="guide-list">
+                <li>
+                  <strong>「きれいにする（make them beautiful）」</strong>（<a href="#f2-t3">ファイル2・テープ3</a>／<a href="#f2-t4">テープ4</a>）：ボンが犠牲者を解体してアニマトロニクスへ詰め込む行為を指す言葉。
+                </li>
+                <li>
+                  <strong>「Safety in pills, Sophie」</strong>（<a href="#ly-voice">Lucky You・語りパート</a>）：記憶喪失の薬を飲むソフィーに対し、「薬の中に安全がある」と繰り返される音声。
+                </li>
+                <li>
+                  <strong>「I'm still here」</strong>（<a href="#spectacle-content">Spectacle・映像の内容</a>）：閉鎖された店舗の報道映像の終盤、ローズマリーの顔と共に画面を埋め尽くす言葉。
+                </li>
+              </ul>
             </article>
           </div>
         </section>
@@ -115,8 +196,7 @@
           </ol>
         </section>
 
-        <section>
-          <h2>本文アーカイブ</h2>
+        <section aria-label="本文">
           <div class="article-controls" aria-label="表示の切り替えと区分">
             <div class="sec-legend" aria-label="節の区分">
               <span class="sec-badge sec-badge--event">映像で起きたこと</span>
@@ -147,7 +227,7 @@
 
     <footer class="footer">
       <p>
-        Source: The Walten Files 考察ノート.md / Built for readable coverage.
+        出典：『The Walten Files 考察ノート.md』をもとに構成。
         <a href="#top" class="footer__top">↑ ページ上部へ</a>
       </p>
     </footer>

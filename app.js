@@ -174,7 +174,20 @@ function simpleMarkdownToHtml(markdown) {
     quoteType = "";
   };
 
-  for (const lineRaw of lines) {
+  const isPlainParagraphLine = (candidateLine) => {
+    const t = candidateLine.trim();
+    if (!t) return false;
+    if (/^---$/.test(t)) return false;
+    if (/^(#{2,4})\s+/.test(t)) return false;
+    if (t === ">" || t.startsWith("> ")) return false;
+    if (/^\d+\.\s+/.test(t)) return false;
+    if (/^(\s*)-+\s+/.test(candidateLine)) return false;
+    if (/^!\[([^\]]*)\]\(([^)]+)\)$/.test(t)) return false;
+    return true;
+  };
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const lineRaw = lines[i];
     const line = lineRaw.trimEnd();
     const trimmed = line.trim();
 
@@ -264,6 +277,31 @@ function simpleMarkdownToHtml(markdown) {
     if (imgMatch) {
       closeAll();
       html.push(renderImage(imgMatch[1], imgMatch[2]));
+      continue;
+    }
+
+    // 考察段落: **見出し：** + 次行 => 一行の結論。 (+ 任意で元の本文行)
+    if (
+      /^\*\*(?!重要な点[：:]|隠し要素[：:])(.+?[：:])\*\*$/.test(trimmed) &&
+      i + 1 < lines.length &&
+      /^=>\s+(.+)$/.test(lines[i + 1].trim())
+    ) {
+      closeAll();
+      const conclusionMatch = lines[i + 1].trim().match(/^=>\s+(.+)$/);
+      const conclusionText = conclusionMatch ? conclusionMatch[1] : "";
+      i += 1;
+
+      if (i + 1 < lines.length && isPlainParagraphLine(lines[i + 1].trimEnd())) {
+        const bodyText = lines[i + 1].trim();
+        i += 1;
+        html.push(
+          `<div class="analysis-block"><p class="analysis-block__title">${formatInline(trimmed)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p><p class="analysis-block__body">${formatInline(bodyText)}</p></div>`
+        );
+      } else {
+        html.push(
+          `<div class="analysis-block analysis-block--list-head"><p class="analysis-block__title">${formatInline(trimmed)}</p><p class="analysis-block__conclusion">${formatInline(conclusionText)}</p></div>`
+        );
+      }
       continue;
     }
 
@@ -688,7 +726,7 @@ function enhanceGlossaryTerms(glossaryItems) {
           if (excludedTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
           if (
             parent.closest(
-              "a, button, code, pre, figcaption, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card"
+              "a, button, code, pre, figcaption, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card, .analysis-block__title, .analysis-block__conclusion"
             )
           ) {
             return NodeFilter.FILTER_REJECT;
