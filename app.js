@@ -949,20 +949,7 @@ function wireGlossaryPopovers(glossaryItems) {
     const desc = document.createElement("p");
     desc.className = "term-card__desc";
     desc.textContent = entry.description;
-    if (forwardSpoilersOpen) {
-      content.appendChild(desc);
-    } else {
-      // 説明文は結末に触れることがあるため、畳んでいる間は開くまで見せない。
-      const reveal = document.createElement("button");
-      reveal.type = "button";
-      reveal.className = "term-card__reveal";
-      reveal.textContent = "説明を開く（先の内容に触れることがある）";
-      reveal.addEventListener("click", (event) => {
-        event.stopPropagation();
-        reveal.replaceWith(desc);
-      });
-      content.appendChild(reveal);
-    }
+    content.appendChild(desc);
 
     card.appendChild(content);
     wrap.appendChild(card);

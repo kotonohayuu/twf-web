@@ -438,11 +438,6 @@ button:active {
   display: none;
 }
 
-.term-card__reveal {
-  padding: 4px 10px;
-  font-size: 0.82rem;
-}
-
 .search-results__context--masked {
   color: var(--muted);
 }
