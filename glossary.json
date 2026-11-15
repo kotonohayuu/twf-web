@@ -3,91 +3,91 @@
     "id": "sophie",
     "term": "ソフィー・ウォルテン",
     "aliases": ["ソフィー・ウォルテン", "ソフィー"],
-    "image": "./images/sophie_walten.webp",
+    "image": "./images/thumbs/sophie_walten.webp",
     "description": "ジャックとローズマリーの娘で標的リスト最後の生存者。薬で過去の記憶を失っていたが、『BunnyFarm』を通じて1974年の事件を思い出していく。"
   },
   {
     "id": "felix",
     "term": "フェリックス・クランケン",
     "aliases": ["フェリックス・クランケン", "フェリックス"],
-    "image": "./images/felix_kranken.webp",
+    "image": "./images/thumbs/felix_kranken.webp",
     "description": "ジャックの親友でBSI共同創業者。1974年5月2日に飲酒運転事故でエドとモリーを死なせて森に埋め、後に単独で移転プロジェクトを主導した。"
   },
   {
     "id": "jack",
     "term": "ジャック・ウォルテン",
     "aliases": ["ジャック・ウォルテン", "ジャック"],
-    "image": "./images/jack_walten.webp",
+    "image": "./images/thumbs/jack_walten.webp",
     "description": "BSI共同創業者でソフィー・エド・モリーの父。子どもたちの死の翌月である1974年6月11日に失踪し、以降のテープや映像に繰り返し姿を現す。"
   },
   {
     "id": "rosemary",
     "term": "ローズマリー・ウォルテン",
     "aliases": ["ローズマリー・ウォルテン", "ローズマリー", "ロージー"],
-    "image": "./images/rosemary_walten.webp",
+    "image": "./images/thumbs/rosemary_walten.webp",
     "description": "ジャックの妻でショーストッパーズをデザインしたBSIリードアーティスト。夫を探して訪れた夜の店舗舞台裏でボンに殺害され、シャに詰め込まれた。"
   },
   {
     "id": "ed_molly",
     "term": "エド＆モリー",
     "aliases": ["エドワード・ウォルテン", "モリー・ウォルテン", "エド＆モリー", "エドとモリー"],
-    "image": "./images/ed_walten.webp",
+    "image": "./images/thumbs/ed_walten.webp",
     "description": "ウォルテン家の幼い兄妹（12歳と9歳）。1974年5月2日の学校パーティーからの帰路、フェリックスの飲酒運転事故で死亡し、灰色の人形Rocketに魂が宿った。"
   },
   {
     "id": "susan",
     "term": "スーザン・ウッディングス",
     "aliases": ["スーザン・ウッディングス", "スーザン"],
-    "image": "./images/susan_woodings.webp",
+    "image": "./images/thumbs/susan_woodings.webp",
     "description": "CyberFun Techから関与したBSIリードエンジニア。1974年6月30日の夜、ボンの異常を単独点検中に舞台裏で襲われ、バニーに閉じ込められて命を落とした。"
   },
   {
     "id": "charles",
     "term": "チャールズ・ブルック",
     "aliases": ["チャールズ・ブルック", "チャールズ"],
-    "image": "./images/charles_brook.webp",
+    "image": "./images/thumbs/charles_brook.webp",
     "description": "1970年からBSIのコンピュータ・スーパーバイザーを務めた技術者。スーザンと実機テストを担当しており、ビリーのカセットで3番目に名前が呼ばれる失踪者。"
   },
   {
     "id": "brian",
     "term": "ブライアン・ステルズ",
     "aliases": ["ブライアン・ステルズ", "ブライアン"],
-    "image": "./images/brian_stells.webp",
+    "image": "./images/thumbs/brian_stells.webp",
     "description": "1982年10月にK-9保管施設へ派遣された新任の施設管理人。顔認識システムの狂いにより、ボンに「ソフィー」と誤認されて殺害された。"
   },
   {
     "id": "ashley",
     "term": "アシュリー・パークス",
     "aliases": ["アシュリー・パークス", "アシュリー・P", "アシュリー"],
-    "image": "./images/ashley_parks.webp",
+    "image": "./images/thumbs/ashley_parks.webp",
     "description": "1978年7月にK-9保管施設へ入ったBSI技術者。夜中に単独で「BACKDOORS」最奥のカセットを再生した直後にボンに襲われ、ビリーに詰め込まれた。"
   },
   {
     "id": "hillary",
     "term": "ヒラリー・B",
     "aliases": ["ヒラリー・B", "ヒラリー"],
-    "image": "./images/hillary_b.webp",
+    "image": "./images/thumbs/hillary_b.webp",
     "description": "1978年7月にK-9保管施設で再プログラム作業を行ったBSI技術者。閉店前の店舗の異変や、意図的に壊されたようなボンの眼窩の損傷を記録した。"
   },
   {
     "id": "kevin",
     "term": "ケビン・W",
     "aliases": ["ケビン・W", "ケビン"],
-    "image": "./images/kevin_w.webp",
+    "image": "./images/thumbs/kevin_w.webp",
     "description": "1978年7月にK-9保管施設で作業したBSI技術者。内骨格の劣化による作業失敗を報告し、翌朝アシュリーが先に帰ったと思い込んで退去した。"
   },
   {
     "id": "jenny",
     "term": "ジェニー・レターソン",
     "aliases": ["ジェニー・レターソン", "ジェニー"],
-    "image": "./images/jenny_letterson.webp",
+    "image": "./images/thumbs/jenny_letterson.webp",
     "description": "『ファイル3（BunnyFarm）』でソフィーと共にホテル地下室のゲーム筐体をプレイする26歳の女性。ブライアン失踪やアシュリー死亡の噂を語る。"
   },
   {
     "id": "linda",
     "term": "リンダ・トンプソン",
     "aliases": ["リンダ・トンプソン", "リンダ"],
-    "image": "./images/linda_thompson.webp",
+    "image": "./images/thumbs/linda_thompson.webp",
     "description": "1964〜1974年にフェリックスと共に暮らした女性。彼の飲酒問題の悪化を日記に記録し、事故当日の1974年5月2日に別れの手紙を残して去った。"
   },
   {
@@ -101,63 +101,63 @@
     "id": "bon_spirit",
     "term": "「Bon」（灰色の存在）",
     "aliases": ["Bon（灰色の存在）", "灰色のBon", "\"Bon\""],
-    "image": "./images/bon_human.webp",
+    "image": "./images/thumbs/bon_human.webp",
     "description": "機体としてのボンとは別位相（Wonderland）で振る舞う男性霊。犠牲者をスーツという器に閉じ込めることを「きれいにする」と呼び執着する。"
   },
   {
     "id": "bon_anim",
     "term": "ボン（Bon）",
     "aliases": ["ボン", "Bon"],
-    "image": "./images/bon_prime.webp",
+    "image": "./images/thumbs/bon_prime.webp",
     "description": "ショーストッパーズのリーダーである青いウサギ型アニマトロニクス。スーザン・ローズマリー・アシュリー・ブライアンを次々と襲撃した機体。"
   },
   {
     "id": "banny",
     "term": "バニー（Banny）",
     "aliases": ["バニー", "Banny"],
-    "image": "./images/banny_main.webp",
+    "image": "./images/thumbs/banny_main.webp",
     "description": "ショーストッパーズの紫のウサギ型アニマトロニクス。1974年6月30日に襲われたスーザン・ウッディングスの肉体と魂が閉じ込められている。"
   },
   {
     "id": "sha",
     "term": "シャ（Sha）",
     "aliases": ["シャ", "Sha"],
-    "image": "./images/sha_main.webp",
+    "image": "./images/thumbs/sha_main.webp",
     "description": "ショーストッパーズの羊型アニマトロニクス。1974年7月19日に殺害されたローズマリー・ウォルテンの肉体と魂が閉じ込められている。"
   },
   {
     "id": "boozoo",
     "term": "ブーズー（Boozoo）",
     "aliases": ["ブーズー", "Boozoo"],
-    "image": "./images/boozoo_broken.webp",
+    "image": "./images/thumbs/boozoo_broken.webp",
     "description": "ショーストッパーズの一員で、手品などを披露する団長（リングマスター）モチーフの人間型アニマトロニクス。"
   },
   {
     "id": "billy",
     "term": "ビリー（Billy）",
     "aliases": ["ビリー", "Billy"],
-    "image": "./images/billy_main.webp",
+    "image": "./images/thumbs/billy_main.webp",
     "description": "胸部にカセットプレーヤーを備えた誕生日パーティー用のピエロ型アニマトロニクス。K-9施設のバックドア最奥に置かれ、アシュリーの遺体が詰め込まれた。"
   },
   {
     "id": "rocket",
     "term": "Rocket（ロケット）",
     "aliases": ["Rocket", "ロケット"],
-    "image": "./images/rocket_main.webp",
+    "image": "./images/thumbs/rocket_main.webp",
     "description": "エドとモリーの魂が宿った青い蝶ネクタイの灰色のウサギ人形。事故現場からフェリックスに持ち帰られ、後にK-9施設のバックドアの壁に吊るされた。"
   },
   {
     "id": "showbear",
     "term": "Showbear",
     "aliases": ["Showbear"],
-    "image": "./images/f2_ending_showbear.webp",
+    "image": "./images/thumbs/f2_ending_showbear.webp",
     "description": "白い熊の姿をした存在。『ファイル2』末尾や『Lucky You』『BunnyFarm』に現れ、設定変更により語り手はMr. Snowである可能性も指摘されている。"
   },
   {
     "id": "shadowman",
     "term": "シャドーマン（影の男）",
     "aliases": ["シャドーマン", "Shadow Man", "影の男"],
-    "image": "./images/shadow_man.webp",
+    "image": "./images/thumbs/shadow_man.webp",
     "description": "ローズマリー殺害現場の「EMPLOYEES ONLY」戸口などに立つ黒い人影。施設への権限や立場からフェリックスを指す説が有力視されている。"
   },
   {
@@ -185,7 +185,7 @@
     "id": "k9",
     "term": "K-9保管施設",
     "aliases": ["K-9保管施設", "K-9施設", "Storage K-9", "K-9"],
-    "image": "./images/f1_k9_notice.webp",
+    "image": "./images/thumbs/f1_k9_notice.webp",
     "description": "セントジョアナの森の奥にあるBSIの地下保管バンカー。閉店後の機体群が隔離され、1978年のアシュリー殺害と1982年のブライアン殺害の現場となった。"
   },
   {
