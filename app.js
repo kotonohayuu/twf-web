@@ -68,6 +68,80 @@ function writeStoredFlag(key, value) {
 // 「先の内容に触れる箇所」を開いておくかどうか（読者の選択を覚えておく）。
 let forwardSpoilersOpen = readStoredFlag(FORWARD_SPOILER_STORAGE_KEY);
 
+// 作品を見ていく順番。note.md の目印（{ネタバレ:ファイル4}）と、用語集の
+// fullFrom / before[].from は、この名前で時点を指す。章の見出し（##）の書き出しとも対応する。
+const STAGE_ORDER = [
+  "ファイル1",
+  "ファイル2",
+  "Lucky You",
+  "ファイル3",
+  "Guilty",
+  "souvenir",
+  "Spectacle",
+  "ファイル4"
+];
+const STAGE_ALL = STAGE_ORDER.length; // 全編を見た時点
+
+function stageIndexOf(name) {
+  return STAGE_ORDER.indexOf(String(name ?? "").trim());
+}
+
+// 用語が押された場所は、どの時点までの内容を前提にしてよいか。
+function resolveStageIndexFor(node) {
+  if (forwardSpoilersOpen || !markdownContainer || !(node instanceof Element)) return STAGE_ALL;
+
+  // 章：直前の見出し（##）から決める。対応する章がなければ（総括など）全編扱い。
+  let topLevel = node;
+  while (topLevel.parentElement && topLevel.parentElement !== markdownContainer) {
+    topLevel = topLevel.parentElement;
+  }
+  let chapterStage = STAGE_ALL;
+  for (let el = topLevel; el; el = el.previousElementSibling) {
+    if (el.tagName === "H2") {
+      const title = el.dataset.cleanTitle || el.textContent || "";
+      const index = STAGE_ORDER.findIndex((name) => title.trim().startsWith(name));
+      chapterStage = index >= 0 ? index : STAGE_ALL;
+      break;
+    }
+  }
+
+  // 「先の内容に触れる箇所」の中では、その目印の時点まで進んだものとして扱う。
+  const marked = node.closest("[data-spoiler-until]");
+  const markedStage = marked ? stageIndexOf(marked.dataset.spoilerUntil) : -1;
+  return Math.max(chapterStage, markedStage);
+}
+
+// 用語集の説明文を、時点に合わせて選ぶ。
+// description … 全編を見た人向けの説明。fullFrom の時点から出す（省略時は最初から）。
+// before      … それより前の時点の説明。from の時点から、次の説明に替わるまで出す。
+function pickGlossaryDescription(entry, stageIndex) {
+  const full = { text: entry.description, partial: false };
+  const earlier = Array.isArray(entry.before) ? entry.before : [];
+  if (earlier.length === 0) return full;
+
+  const fullFromIndex = entry.fullFrom ? stageIndexOf(entry.fullFrom) : 0;
+  if (fullFromIndex < 0 || stageIndex >= fullFromIndex) return full;
+
+  let chosen = earlier[0];
+  earlier.forEach((candidate) => {
+    const fromIndex = stageIndexOf(candidate.from);
+    if (fromIndex >= 0 && fromIndex <= stageIndex) chosen = candidate;
+  });
+  return { text: chosen.description, partial: true };
+}
+
+// 用語集に、時点の名前の書き間違いがないかを確かめる（開発者向けの画面に知らせる）。
+function checkGlossaryStages(glossaryItems) {
+  glossaryItems.forEach((entry) => {
+    const names = [entry.fullFrom, ...(Array.isArray(entry.before) ? entry.before.map((b) => b.from) : [])];
+    names.forEach((name) => {
+      if (name !== undefined && stageIndexOf(name) < 0) {
+        console.warn(`glossary.json: 「${entry.term}」の時点「${name}」は ${STAGE_ORDER.join(" / ")} のどれでもありません。`);
+      }
+    });
+  });
+}
+
 // 検索結果の一覧：前後に出す文脈の字数と、一覧に出す件数の上限。
 const SEARCH_CONTEXT_LENGTH = 30;
 const SEARCH_LIST_LIMIT = 200;
@@ -946,10 +1020,22 @@ function wireGlossaryPopovers(glossaryItems) {
       content.appendChild(img);
     }
 
+    // 説明文は、押された場所の時点までに明かされた内容のものを出す。
+    const stageIndex = resolveStageIndexFor(trigger);
+    const picked = pickGlossaryDescription(entry, stageIndex);
+    const body = document.createElement("div");
+    body.className = "term-card__body";
     const desc = document.createElement("p");
     desc.className = "term-card__desc";
-    desc.textContent = entry.description;
-    content.appendChild(desc);
+    desc.textContent = picked.text;
+    body.appendChild(desc);
+    if (picked.partial) {
+      const stageNote = document.createElement("p");
+      stageNote.className = "term-card__stage";
+      stageNote.textContent = `『${STAGE_ORDER[stageIndex]}』までの内容にもとづく説明`;
+      body.appendChild(stageNote);
+    }
+    content.appendChild(body);
 
     card.appendChild(content);
     wrap.appendChild(card);
@@ -1878,6 +1964,7 @@ async function init() {
     addBackToTocLinks();
     enhanceSections();
     enhanceSpoilerFolds();
+    checkGlossaryStages(glossaryItems);
     enhanceGlossaryTerms(glossaryItems);
     buildToc();
     wireSectionFolding();
