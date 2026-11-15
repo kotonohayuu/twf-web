@@ -17,6 +17,12 @@ const tocSidebar = document.getElementById("tocSidebar");
 const tocList = document.getElementById("tocList");
 const tocNav = document.getElementById("tocNav");
 const tocToggleButton = document.getElementById("tocToggleButton");
+const readingBar = document.getElementById("readingBar");
+const readingBarYear = document.getElementById("readingBarYear");
+const readingBarTitle = document.getElementById("readingBarTitle");
+const readingBarToggle = document.getElementById("readingBarToggle");
+const readingBarDrawer = document.getElementById("readingBarDrawer");
+const readingBarTocList = document.getElementById("readingBarTocList");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
 const clearSearchButton = document.getElementById("clearSearchButton");
@@ -304,28 +310,66 @@ function assignFile4AnchorIds() {
   }
 }
 
+function extractHeadingYear(text) {
+  const match = text.match(/(19\d{2}|20\d{2})年(?:(\d{1,2})月)?/);
+  if (!match) return "";
+  if (match[2]) {
+    return `${match[1]}/${match[2].padStart(2, "0")}`;
+  }
+  return match[1];
+}
+
+function createTocItemElement(heading) {
+  const li = document.createElement("li");
+  const link = document.createElement("a");
+  const rawText = heading.textContent?.trim() ?? "";
+  const yearLabel = extractHeadingYear(rawText);
+
+  link.href = `#${heading.id}`;
+  link.dataset.level = heading.tagName.replace("H", "");
+  link.dataset.targetId = heading.id;
+
+  if (yearLabel) {
+    const yearSpan = document.createElement("span");
+    yearSpan.className = "year-tag";
+    yearSpan.textContent = yearLabel;
+    link.appendChild(yearSpan);
+  }
+
+  const titleSpan = document.createElement("span");
+  titleSpan.textContent = rawText;
+  link.appendChild(titleSpan);
+
+  li.appendChild(link);
+  return li;
+}
+
 function buildToc() {
   if (!tocList) return;
   tocList.innerHTML = "";
+  if (readingBarTocList) readingBarTocList.innerHTML = "";
   assignFile4AnchorIds();
   const headings = markdownContainer.querySelectorAll("h2, h3");
   let autoIdCounter = 1;
-  const fragment = document.createDocumentFragment();
+  const desktopFragment = document.createDocumentFragment();
+  const mobileFragment = document.createDocumentFragment();
+
   headings.forEach((heading) => {
     if (!heading.id) {
       // Keep URL hashes ASCII-only for headings without explicit anchors.
       heading.id = `sec-${autoIdCounter}`;
       autoIdCounter += 1;
     }
-    const li = document.createElement("li");
-    const link = document.createElement("a");
-    link.href = `#${heading.id}`;
-    link.textContent = heading.textContent ?? "";
-    link.dataset.level = heading.tagName.replace("H", "");
-    li.appendChild(link);
-    fragment.appendChild(li);
+    desktopFragment.appendChild(createTocItemElement(heading));
+    if (readingBarTocList) {
+      mobileFragment.appendChild(createTocItemElement(heading));
+    }
   });
-  tocList.appendChild(fragment);
+
+  tocList.appendChild(desktopFragment);
+  if (readingBarTocList) {
+    readingBarTocList.appendChild(mobileFragment);
+  }
 }
 
 function wireTocToggle() {
@@ -339,8 +383,18 @@ function wireTocToggle() {
     tocToggleButton.textContent = collapsed ? "目次を開く" : "目次を閉じる";
   };
 
+  const setDrawerOpen = (open) => {
+    if (!readingBarDrawer || !readingBarToggle) return;
+    readingBarDrawer.hidden = !open;
+    readingBarToggle.setAttribute("aria-expanded", String(open));
+    readingBarToggle.textContent = open ? "閉じる" : "目次";
+  };
+
   const syncByViewport = () => {
     applyCollapsedState(compactQuery.matches);
+    if (!compactQuery.matches) {
+      setDrawerOpen(false);
+    }
   };
 
   tocToggleButton.addEventListener("click", () => {
@@ -354,6 +408,31 @@ function wireTocToggle() {
     }
   });
 
+  readingBarToggle?.addEventListener("click", () => {
+    if (!readingBarDrawer) return;
+    setDrawerOpen(readingBarDrawer.hidden);
+  });
+
+  readingBarTocList?.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest("a")) {
+      setDrawerOpen(false);
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!readingBarDrawer || readingBarDrawer.hidden || !readingBar) return;
+    if (event.target instanceof Node && !readingBar.contains(event.target)) {
+      setDrawerOpen(false);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && readingBarDrawer && !readingBarDrawer.hidden) {
+      setDrawerOpen(false);
+      readingBarToggle?.focus();
+    }
+  });
+
   if (typeof compactQuery.addEventListener === "function") {
     compactQuery.addEventListener("change", syncByViewport);
   } else {
@@ -361,6 +440,122 @@ function wireTocToggle() {
   }
 
   syncByViewport();
+}
+
+function wireActiveHeadingTracker() {
+  if (!markdownContainer) return;
+  const headings = Array.from(markdownContainer.querySelectorAll("h2, h3"));
+  if (headings.length === 0) return;
+
+  const quickGuideSection = document.querySelector(".quick-guide");
+  const timelineSection = document.querySelector(".timeline");
+  let ticking = false;
+  let lastActiveId = "";
+
+  const updateCurrentHeading = () => {
+    ticking = false;
+    const threshold = window.innerWidth <= 960 ? 84 : 96;
+    let activeHeading = null;
+    let activeH2 = null;
+
+    for (const heading of headings) {
+      const rect = heading.getBoundingClientRect();
+      if (rect.top <= threshold) {
+        activeHeading = heading;
+        if (heading.tagName === "H2") {
+          activeH2 = heading;
+        }
+      } else {
+        break;
+      }
+    }
+
+    // If activeHeading is H3, make sure activeH2 points to its owning H2
+    if (activeHeading && activeHeading.tagName === "H3" && !activeH2) {
+      const idx = headings.indexOf(activeHeading);
+      for (let i = idx - 1; i >= 0; i -= 1) {
+        if (headings[i].tagName === "H2") {
+          activeH2 = headings[i];
+          break;
+        }
+      }
+    }
+
+    const activeId = activeHeading ? activeHeading.id : "";
+    const parentH2Id = activeH2 && activeH2 !== activeHeading ? activeH2.id : "";
+
+    if (activeId !== lastActiveId) {
+      lastActiveId = activeId;
+      const allTocLinks = document.querySelectorAll("#tocList a, #readingBarTocList a");
+      allTocLinks.forEach((link) => {
+        const targetId = link.getAttribute("data-target-id") || "";
+        const isCurrent = Boolean(activeId && targetId === activeId);
+        const isParent = Boolean(parentH2Id && targetId === parentH2Id);
+        link.classList.toggle("is-current", isCurrent);
+        link.classList.toggle("is-parent-current", isParent);
+        if (isCurrent) {
+          link.setAttribute("aria-current", "location");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+
+      if (activeId && tocSidebar && window.innerWidth > 960) {
+        const desktopActive = tocList?.querySelector(`a[data-target-id="${CSS.escape(activeId)}"]`);
+        if (desktopActive) {
+          const sidebarRect = tocSidebar.getBoundingClientRect();
+          const linkRect = desktopActive.getBoundingClientRect();
+          if (linkRect.top < sidebarRect.top + 36 || linkRect.bottom > sidebarRect.bottom - 24) {
+            tocSidebar.scrollTop += linkRect.top - sidebarRect.top - sidebarRect.height * 0.35;
+          }
+        }
+      }
+    }
+
+    if (readingBarTitle && readingBarYear) {
+      if (activeHeading) {
+        const h2Text = activeH2 ? (activeH2.dataset.cleanTitle || activeH2.textContent?.trim() || "") : "";
+        const currentText = activeHeading.dataset.cleanTitle || activeHeading.textContent?.trim() || "";
+        const yearLabel = extractHeadingYear(currentText) || (activeHeading === activeH2 ? extractHeadingYear(h2Text) : "");
+
+        if (activeHeading.tagName === "H3" && h2Text) {
+          const shortChapter = h2Text.split("—")[0].split("（")[0].trim();
+          readingBarTitle.textContent = `${shortChapter} › ${currentText}`;
+        } else {
+          readingBarTitle.textContent = currentText;
+        }
+
+        if (yearLabel) {
+          readingBarYear.textContent = yearLabel;
+          readingBarYear.hidden = false;
+        } else {
+          readingBarYear.textContent = "";
+          readingBarYear.hidden = true;
+        }
+      } else {
+        readingBarYear.textContent = "";
+        readingBarYear.hidden = true;
+        if (timelineSection && timelineSection.getBoundingClientRect().top <= threshold) {
+          readingBarTitle.textContent = timelineSection.querySelector("h2")?.textContent?.trim() || "主要年表";
+        } else if (quickGuideSection && quickGuideSection.getBoundingClientRect().top <= threshold) {
+          readingBarTitle.textContent = quickGuideSection.querySelector("h2")?.textContent?.trim() || "クイックガイド";
+        } else {
+          readingBarTitle.textContent = "目次・案内";
+        }
+      }
+    }
+  };
+
+  const onScrollOrResize = () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(updateCurrentHeading);
+    }
+  };
+
+  window.addEventListener("scroll", onScrollOrResize, { passive: true });
+  window.addEventListener("resize", onScrollOrResize, { passive: true });
+  updateCurrentHeading();
 }
 
 function addBackToTocLinks() {
@@ -583,6 +778,7 @@ async function init() {
     addBackToTocLinks();
     wireTocToggle();
     wireBackToTocLinks();
+    wireActiveHeadingTracker();
     wireSearch();
     if (!loadedFromFile) {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";

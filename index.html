@@ -11,6 +11,27 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body id="top">
+    <div id="readingBar" class="reading-bar" role="region" aria-label="現在地">
+      <div class="reading-bar__bar">
+        <div class="reading-bar__current">
+          <span id="readingBarYear" class="year-tag" hidden></span>
+          <span id="readingBarTitle" class="reading-bar__title">目次・案内</span>
+        </div>
+        <button
+          id="readingBarToggle"
+          class="reading-bar__toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="readingBarDrawer"
+        >
+          目次
+        </button>
+      </div>
+      <nav id="readingBarDrawer" class="reading-bar__drawer" aria-label="モバイル目次" hidden>
+        <ul id="readingBarTocList" class="toc-list"></ul>
+      </nav>
+    </div>
+
     <header class="hero">
       <div class="hero__content">
         <div class="hero__text">
