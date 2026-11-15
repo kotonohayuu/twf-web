@@ -700,6 +700,20 @@ button:active {
   color: var(--muted);
 }
 
+/* 図解（images/diagram_*.svg）は縦長のため、画面写真用の高さ上限と枠を外す */
+.wiki-image[src*="/diagram_"] {
+  width: 100%;
+  max-width: 440px;
+  max-height: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.wiki-figure:has(> .wiki-image[src*="/diagram_"]) {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
 /* C & D. 節の区分バッジとあらすじ折りたたみ操作 */
 .article-controls {
   display: flex;

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="712" viewBox="0 0 400 712" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
+<title>ファイル4の場面を作中の日付順に並べ直したもの</title>
+<desc>丸数字は映像での登場順。作中の日付順では、2 チャールズのノート（1970年10月10日）、5 WALKAROUND TEST（1974年1月21日）、6 FACIAL TRACING（3月7日）、1 スクールダンス（5月2日夜）、9 ジャックがフェリックス宅へ（5月3日0時23分）、10 フェリックスの森（5月3日8時56分）、11 フェリックスの告白（5月5日）、7 Rocket事件（5月13日）、8 THE FIRST スーザン襲撃（6月30日）、12 Wonderlandの会話（7月1日1時36分）。3と4は日付が示されない。</desc>
+<rect x="0" y="0" width="400" height="712" rx="8" fill="#0e131e" stroke="none" stroke-width="1"/>
+<text x="12" y="24" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">映像に出てくる順</text>
+<circle cx="24" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="24" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">1</text>
+<line x1="37" y1="48" x2="43" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="56" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="56" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">2</text>
+<line x1="69" y1="48" x2="75" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="88" cy="48" r="12" fill="#0e131e" stroke="#aeb7c8" stroke-width="1.5" stroke-dasharray="3 3"/><text x="88" y="52.5" font-size="12.5" fill="#aeb7c8" font-weight="700" text-anchor="middle">3</text>
+<line x1="101" y1="48" x2="107" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="120" cy="48" r="12" fill="#0e131e" stroke="#aeb7c8" stroke-width="1.5" stroke-dasharray="3 3"/><text x="120" y="52.5" font-size="12.5" fill="#aeb7c8" font-weight="700" text-anchor="middle">4</text>
+<line x1="133" y1="48" x2="139" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="152" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="152" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">5</text>
+<line x1="165" y1="48" x2="171" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="184" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="184" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">6</text>
+<line x1="197" y1="48" x2="203" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="216" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="216" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">7</text>
+<line x1="229" y1="48" x2="235" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="248" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="248" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">8</text>
+<line x1="261" y1="48" x2="267" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="280" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="280" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">9</text>
+<line x1="293" y1="48" x2="299" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="312" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="312" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">10</text>
+<line x1="325" y1="48" x2="331" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="344" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="344" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">11</text>
+<line x1="357" y1="48" x2="363" y2="48" stroke="#566178" stroke-width="1"/>
+<circle cx="376" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="376" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">12</text>
+<text x="12" y="90" font-size="13.5" fill="#e8edf7" font-weight="700" text-anchor="start">↓ 作中の日付順に並べ直すと</text>
+<line x1="100" y1="124" x2="100" y2="132" stroke="#566178" stroke-width="2"/>
+<line x1="100" y1="132" x2="100" y2="158" stroke="#566178" stroke-width="2" stroke-dasharray="3 4"/>
+<line x1="100" y1="158" x2="100" y2="586" stroke="#566178" stroke-width="2"/>
+<circle cx="100" cy="124" r="4.5" fill="#68d7ff"/>
+<text x="86" y="128.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">1970/10/10</text>
+<circle cx="128" cy="124" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="128.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">2</text>
+<text x="148" y="129" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">チャールズのノート</text>
+<circle cx="100" cy="166" r="4.5" fill="#68d7ff"/>
+<text x="86" y="170.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">1974/01/21</text>
+<circle cx="128" cy="166" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="170.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">5</text>
+<text x="148" y="171" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">WALKAROUND TEST（Banny）</text>
+<circle cx="100" cy="208" r="4.5" fill="#68d7ff"/>
+<text x="86" y="212.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">03/07</text>
+<circle cx="128" cy="208" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="212.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">6</text>
+<text x="148" y="213" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">FACIAL TRACING（Sha）</text>
+<circle cx="100" cy="250" r="4.5" fill="#68d7ff"/>
+<text x="86" y="254.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/02 夜</text>
+<circle cx="128" cy="250" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="254.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">1</text>
+<text x="148" y="255" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">スクールダンス（事故の夜）</text>
+<circle cx="100" cy="292" r="4.5" fill="#68d7ff"/>
+<text x="86" y="296.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/03 0:23</text>
+<circle cx="128" cy="292" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="296.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">9</text>
+<text x="148" y="297" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">ジャックがフェリックス宅へ</text>
+<circle cx="100" cy="334" r="4.5" fill="#68d7ff"/>
+<text x="86" y="338.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/03 8:56</text>
+<circle cx="128" cy="334" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="338.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">10</text>
+<text x="148" y="339" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">フェリックスの森・自殺未遂</text>
+<circle cx="100" cy="376" r="4.5" fill="#68d7ff"/>
+<text x="86" y="380.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/05</text>
+<circle cx="128" cy="376" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="380.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">11</text>
+<text x="148" y="381" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">フェリックスの告白</text>
+<circle cx="100" cy="418" r="4.5" fill="#68d7ff"/>
+<text x="86" y="422.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/13</text>
+<circle cx="128" cy="418" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="422.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">7</text>
+<text x="148" y="423" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">テスト中のRocket事件</text>
+<circle cx="100" cy="460" r="4" fill="#0e131e" stroke="#566178" stroke-width="1.5"/>
+<text x="86" y="464.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">06/11</text>
+<text x="116" y="464.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">（参考）ジャック失踪</text>
+<circle cx="100" cy="502" r="4" fill="#0e131e" stroke="#566178" stroke-width="1.5"/>
+<text x="86" y="506.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">06/28</text>
+<text x="116" y="506.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">（参考）Bon&#x27;s Burgers 開店</text>
+<circle cx="100" cy="544" r="4.5" fill="#68d7ff"/>
+<text x="86" y="548.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">06/30</text>
+<circle cx="128" cy="544" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="548.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">8</text>
+<text x="148" y="549" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">THE FIRST（スーザン襲撃）</text>
+<circle cx="100" cy="586" r="4.5" fill="#68d7ff"/>
+<text x="86" y="590.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">07/01 1:36</text>
+<circle cx="128" cy="586" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="590.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">12</text>
+<text x="148" y="591" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">Wonderlandの会話</text>
+<text x="12" y="620" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">日付が示されない場面</text>
+<rect x="8" y="630" width="384" height="70" rx="6" fill="none" stroke="#30384a" stroke-width="1" stroke-dasharray="4 4"/>
+<circle cx="30" cy="650" r="12" fill="#0e131e" stroke="#aeb7c8" stroke-width="1.5" stroke-dasharray="3 3"/><text x="30" y="654.5" font-size="12.5" fill="#aeb7c8" font-weight="700" text-anchor="middle">3</text>
+<text x="50" y="655" font-size="14" fill="#e8edf7" font-weight="400" text-anchor="start">Showstoppersの紹介と設計解説</text>
+<circle cx="30" cy="680" r="12" fill="#0e131e" stroke="#aeb7c8" stroke-width="1.5" stroke-dasharray="3 3"/><text x="30" y="684.5" font-size="12.5" fill="#aeb7c8" font-weight="700" text-anchor="middle">4</text>
+<text x="50" y="685" font-size="14" fill="#e8edf7" font-weight="400" text-anchor="start">BSI Consoleに関する2枚のノート</text>
+</svg>
