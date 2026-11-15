@@ -232,6 +232,19 @@
               <button id="prevMatchButton" type="button" aria-label="前の一致箇所へ">↑ 前へ</button>
               <button id="nextMatchButton" type="button" aria-label="次の一致箇所へ">↓ 次へ</button>
             </div>
+            <div id="searchResults" class="search-results" hidden>
+              <button
+                id="searchResultsToggle"
+                class="search-results__toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="searchResultsList"
+              >
+                一致箇所の一覧を開く
+              </button>
+              <ol id="searchResultsList" class="search-results__list" aria-label="一致箇所の一覧" hidden></ol>
+              <p id="searchResultsNote" class="search-results__note" hidden></p>
+            </div>
           </div>
           <article id="markdownContainer" class="markdown-body"></article>
         </section>

@@ -31,9 +31,17 @@ const searchNav = document.getElementById("searchNav");
 const prevMatchButton = document.getElementById("prevMatchButton");
 const nextMatchButton = document.getElementById("nextMatchButton");
 const summaryStatus = document.getElementById("summaryStatus");
+const searchResults = document.getElementById("searchResults");
+const searchResultsToggle = document.getElementById("searchResultsToggle");
+const searchResultsList = document.getElementById("searchResultsList");
+const searchResultsNote = document.getElementById("searchResultsNote");
 const foldEventsToggle = document.getElementById("foldEventsToggle");
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
+
+// 検索結果の一覧：前後に出す文脈の字数と、一覧に出す件数の上限。
+const SEARCH_CONTEXT_LENGTH = 30;
+const SEARCH_LIST_LIMIT = 200;
 
 // 再読み込みのときは、前回の位置やURLの #見出し ではなく、ページの最上部から表示する。
 function isReloadNavigation() {
@@ -1239,12 +1247,171 @@ function highlightKeyword(keyword) {
   return createdMarks;
 }
 
+// 検索結果の一覧：一致箇所の「章 › 節」を求める。
+function describeMatchLocation(mark, chapterCache) {
+  let topLevel = mark;
+  while (topLevel.parentElement && topLevel.parentElement !== markdownContainer) {
+    topLevel = topLevel.parentElement;
+  }
+
+  let chapter = chapterCache.get(topLevel);
+  if (chapter === undefined) {
+    chapter = "";
+    for (let node = topLevel; node; node = node.previousElementSibling) {
+      if (node.tagName === "H2") {
+        chapter = node.dataset.cleanTitle || node.textContent?.trim() || "";
+        break;
+      }
+    }
+    chapterCache.set(topLevel, chapter);
+  }
+
+  const sectionHeading = mark.closest(".h3-section")?.querySelector(":scope > h3");
+  const section = sectionHeading ? sectionHeading.dataset.cleanTitle || "" : "";
+  return [chapter, section].filter(Boolean).join(" › ") || "冒頭";
+}
+
+// 検索結果の一覧：一致箇所の前後の文脈（それぞれ SEARCH_CONTEXT_LENGTH 字まで）を求める。
+function describeMatchContext(mark) {
+  const block =
+    mark.closest("p, li, figcaption, h2, h3, h4, blockquote, td, th") || mark.parentElement || mark;
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  let before = "";
+  let after = "";
+  let passedMatch = false;
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (mark.contains(node)) {
+      passedMatch = true;
+    } else if (passedMatch) {
+      after += node.nodeValue ?? "";
+      if (after.length > SEARCH_CONTEXT_LENGTH * 2) break;
+    } else {
+      before += node.nodeValue ?? "";
+    }
+  }
+
+  before = before.replace(/\s+/g, " ").replace(/^\s+/, "");
+  after = after.replace(/\s+/g, " ").replace(/\s+$/, "");
+  return {
+    before: before.length > SEARCH_CONTEXT_LENGTH ? `…${before.slice(-SEARCH_CONTEXT_LENGTH)}` : before,
+    after: after.length > SEARCH_CONTEXT_LENGTH ? `${after.slice(0, SEARCH_CONTEXT_LENGTH)}…` : after
+  };
+}
+
 function wireSearch() {
   if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
   let inputDebounceTimer = null;
   let currentKeyword = "";
   let currentMatches = [];
   let activeMatchIndex = -1;
+
+  // 狭い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
+  const narrowQuery = window.matchMedia("(max-width: 640px)");
+  let resultsOpen = !narrowQuery.matches;
+
+  const applyResultsOpen = () => {
+    if (!searchResultsToggle || !searchResultsList) return;
+    const total = currentMatches.length;
+    searchResultsList.hidden = !resultsOpen;
+    if (searchResultsNote) {
+      searchResultsNote.hidden = !resultsOpen || !searchResultsNote.textContent;
+    }
+    searchResultsToggle.setAttribute("aria-expanded", String(resultsOpen));
+    searchResultsToggle.textContent = `一致箇所の一覧（${total}件）を${resultsOpen ? "閉じる" : "開く"}`;
+  };
+
+  const syncActiveResultRow = () => {
+    if (!searchResultsList) return;
+    searchResultsList.querySelectorAll('[aria-current="true"]').forEach((row) => {
+      row.removeAttribute("aria-current");
+    });
+    if (activeMatchIndex < 0) return;
+    const row = searchResultsList.querySelector(`[data-match-index="${activeMatchIndex}"]`);
+    if (!(row instanceof HTMLElement)) return;
+    row.setAttribute("aria-current", "true");
+    if (!searchResultsList.hidden) {
+      const listRect = searchResultsList.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      if (rowRect.top < listRect.top || rowRect.bottom > listRect.bottom) {
+        searchResultsList.scrollTop += rowRect.top - listRect.top - listRect.height / 3;
+      }
+    }
+  };
+
+  // 一致箇所を、上に張り付く検索バー（一覧を含む）に隠れない位置へ移動する。
+  const scrollMatchIntoView = (target) => {
+    const stuckBottom = () => {
+      if (!searchToolbar || !searchToolbar.classList.contains("is-active")) return 0;
+      const stickyTop = parseFloat(window.getComputedStyle(searchToolbar).top) || 0;
+      return stickyTop + searchToolbar.offsetHeight;
+    };
+
+    // 一覧を開いたままだと本文の見える範囲がほとんど残らない場合は、一覧を閉じる。
+    if (resultsOpen && window.innerHeight - stuckBottom() < 220) {
+      resultsOpen = false;
+      applyResultsOpen();
+    }
+
+    const visibleTop = stuckBottom();
+    const rect = target.getBoundingClientRect();
+    const desiredCenter = visibleTop + (window.innerHeight - visibleTop) / 2;
+    window.scrollBy({ top: rect.top + rect.height / 2 - desiredCenter, behavior: "smooth" });
+  };
+
+  const renderResultList = () => {
+    if (!searchResults || !searchResultsList) return;
+    searchResultsList.textContent = "";
+    if (searchResultsNote) searchResultsNote.textContent = "";
+
+    const total = currentMatches.length;
+    if (total === 0) {
+      searchResults.hidden = true;
+      return;
+    }
+
+    const chapterCache = new Map();
+    const fragment = document.createDocumentFragment();
+    currentMatches.slice(0, SEARCH_LIST_LIMIT).forEach((mark, index) => {
+      const context = describeMatchContext(mark);
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "search-results__item";
+      button.dataset.matchIndex = String(index);
+
+      const where = document.createElement("span");
+      where.className = "search-results__where";
+      where.textContent = describeMatchLocation(mark, chapterCache);
+
+      const text = document.createElement("span");
+      text.className = "search-results__context";
+      const hit = document.createElement("mark");
+      hit.textContent = mark.textContent ?? "";
+      text.append(context.before, hit, context.after);
+
+      button.append(where, text);
+      item.appendChild(button);
+      fragment.appendChild(item);
+    });
+    searchResultsList.appendChild(fragment);
+    searchResultsList.scrollTop = 0;
+
+    if (searchResultsNote && total > SEARCH_LIST_LIMIT) {
+      searchResultsNote.textContent = `一覧に出しているのは先頭の${SEARCH_LIST_LIMIT}件。残りは「次へ」で移動できる。`;
+    }
+    searchResults.hidden = false;
+    applyResultsOpen();
+  };
 
   const updateSearchUi = (keyword) => {
     if (!keyword) {
@@ -1282,7 +1449,8 @@ function wireSearch() {
     ensureSectionExpandedFor(target);
     target.classList.add("is-active");
     updateSearchUi(currentKeyword);
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    syncActiveResultRow();
+    scrollMatchIntoView(target);
   };
 
   const runSearch = ({ shouldScroll, step = 1 } = { shouldScroll: false, step: 1 }) => {
@@ -1295,6 +1463,7 @@ function wireSearch() {
     currentKeyword = keyword;
     currentMatches = highlightKeyword(keyword);
     activeMatchIndex = -1;
+    renderResultList();
 
     if (shouldScroll && keyword && currentMatches.length > 0) {
       focusMatch(step < 0 ? currentMatches.length - 1 : 0);
@@ -1327,8 +1496,29 @@ function wireSearch() {
     currentMatches = [];
     activeMatchIndex = -1;
     clearHighlights();
+    renderResultList();
     updateSearchUi("");
     searchInput.focus();
+  });
+
+  searchResultsToggle?.addEventListener("click", () => {
+    resultsOpen = !resultsOpen;
+    applyResultsOpen();
+    if (resultsOpen) syncActiveResultRow();
+  });
+
+  searchResultsList?.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const row = event.target.closest(".search-results__item");
+    if (!(row instanceof HTMLElement)) return;
+    const index = Number(row.dataset.matchIndex);
+    if (!Number.isInteger(index) || !currentMatches[index]) return;
+    // 狭い画面では一覧が本文を覆うため、行を選んだら一覧を閉じてから移動する。
+    if (narrowQuery.matches) {
+      resultsOpen = false;
+      applyResultsOpen();
+    }
+    focusMatch(index);
   });
 
   updateSearchUi("");
