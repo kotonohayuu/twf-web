@@ -1023,19 +1023,10 @@ function wireGlossaryPopovers(glossaryItems) {
     // 説明文は、押された場所の時点までに明かされた内容のものを出す。
     const stageIndex = resolveStageIndexFor(trigger);
     const picked = pickGlossaryDescription(entry, stageIndex);
-    const body = document.createElement("div");
-    body.className = "term-card__body";
     const desc = document.createElement("p");
     desc.className = "term-card__desc";
     desc.textContent = picked.text;
-    body.appendChild(desc);
-    if (picked.partial) {
-      const stageNote = document.createElement("p");
-      stageNote.className = "term-card__stage";
-      stageNote.textContent = `『${STAGE_ORDER[stageIndex]}』までの内容にもとづく説明`;
-      body.appendChild(stageNote);
-    }
-    content.appendChild(body);
+    content.appendChild(desc);
 
     card.appendChild(content);
     wrap.appendChild(card);

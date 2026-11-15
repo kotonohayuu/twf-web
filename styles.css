@@ -1135,18 +1135,6 @@ button:active {
   color: var(--text);
 }
 
-.term-card__body {
-  flex: 1;
-  min-width: 0;
-}
-
-/* 時点に合わせた説明のときだけ出す、小さな注記 */
-.term-card__stage {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.76rem;
-}
-
 .footer {
   border-top: 2px solid var(--line-dark);
   box-shadow: inset 0 1px 0 var(--line-light);
