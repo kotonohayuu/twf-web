@@ -180,6 +180,8 @@ BSI傘下「サンライトアニメーション（Sunlight Animation）」制�
 
 ![Billy（アシュリーの魂が宿るアニマトロニクス）](./images/billy_main.webp)
 
+![ボンの血まみれの機械の手がビリーのマスクを剥がし、内部のアシュリーの顔が露わになる瞬間](./images/f2_billy_ashley.webp)
+
 **重要な点：** ビリーが「歌を歌ってもいいかい？」と言った直後に流れる不気味な音声を逆再生すると、「`The blind fortune teller is filled with knowledge, but never with context.`（盲目の占い師は知識に満ちているが、文脈は決して持たない）」という一文になる（脚本担当Evaにより確定）。またマスクが剥がされた数秒後（17:22頃）、**わずか2フレーム（約0.07秒）だけ**画面いっぱいに白い英文テキストがサブリミナル表示され、翌朝ケビンとヒラリーはアシュリーが先に帰ったと思い込んで退去したが実際にはバックドアで誰にも届かず叫び続けていたこと、数日後に管理人たちからバックドアからの猛烈な悪臭が報告されて施設が無期限閉鎖（移転プロジェクト失敗）となったこと、そして「`Ashley is still there, but she's not screaming anymore, she saw something she wasn't supposed to see, and now she's beautiful...`（アシュリーはまだそこにいるが、もう叫んでいない。見てはいけないものを見た。そして今、彼女はきれいになった……）」という顛末が記されている。直後の砂嵐の合間に隠し動画『Lucky You』のYouTube URL後半（`.be/K07tQqEDOfQ`）が一瞬表示され、エンドクレジット後には暗闇から「`Shadow Man sees me when lights go off.`（明かりが消えた時、影の男は私を見る）」の音声が流れ、最後の8bit納屋映像の右上の木々の後ろに**Showbear**が映る。
 
 ![エンディングの8bit映像で右上の木々の後ろから姿を現すShowbear](./images/f2_ending_showbear.webp)
