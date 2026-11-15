@@ -38,6 +38,7 @@ const searchResultsNote = document.getElementById("searchResultsNote");
 const foldEventsToggle = document.getElementById("foldEventsToggle");
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
+const GUIDE_SPOILER_STORAGE_KEY = "twf_guide_spoiler";
 
 // 検索結果の一覧：前後に出す文脈の字数と、一覧に出す件数の上限。
 const SEARCH_CONTEXT_LENGTH = 30;
@@ -1588,6 +1589,28 @@ function wireSearch() {
   updateSearchUi("");
 }
 
+// クイックガイドのネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
+function wireGuideSpoiler() {
+  const details = document.getElementById("guideSpoiler");
+  if (!(details instanceof HTMLDetailsElement)) return;
+
+  try {
+    if (window.localStorage.getItem(GUIDE_SPOILER_STORAGE_KEY) === "1") {
+      details.open = true;
+    }
+  } catch (_error) {
+    // Ignore storage errors in restricted browsing modes.
+  }
+
+  details.addEventListener("toggle", () => {
+    try {
+      window.localStorage.setItem(GUIDE_SPOILER_STORAGE_KEY, details.open ? "1" : "0");
+    } catch (_error) {
+      // Ignore storage errors in restricted browsing modes.
+    }
+  });
+}
+
 function wireSearchPlaceholder() {
   if (!searchInput) return;
   const fullText = searchInput.getAttribute("placeholder") || "";
@@ -1623,6 +1646,7 @@ async function init() {
   if (!summaryStatus) return;
   summaryStatus.textContent = "";
   wireSearchPlaceholder();
+  wireGuideSpoiler();
 
   let markdown = FALLBACK_NOTE;
   let loadedFromFile = false;

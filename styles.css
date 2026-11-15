@@ -369,6 +369,37 @@ button:active {
   grid-column: 1 / -1;
 }
 
+/* クイックガイド：事件の核心と登場人物の結末は、開くまで見せない */
+.guide-spoiler {
+  margin-top: 10px;
+}
+
+.guide-spoiler__summary {
+  padding: 10px 14px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #30384d 0%, #171c28 100%);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.guide-spoiler__summary:hover {
+  background: linear-gradient(180deg, #3b4660 0%, #202739 100%);
+  color: #ffffff;
+}
+
+.guide-spoiler[open] > .guide-spoiler__summary {
+  margin-bottom: 12px;
+}
+
+.guide-spoiler[open] .guide-spoiler__label--closed,
+.guide-spoiler:not([open]) .guide-spoiler__label--open {
+  display: none;
+}
+
 .guide-card h3 {
   margin: 0 0 8px;
   font-size: 1rem;
