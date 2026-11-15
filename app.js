@@ -31,6 +31,64 @@ const searchNav = document.getElementById("searchNav");
 const prevMatchButton = document.getElementById("prevMatchButton");
 const nextMatchButton = document.getElementById("nextMatchButton");
 const summaryStatus = document.getElementById("summaryStatus");
+const foldEventsToggle = document.getElementById("foldEventsToggle");
+
+const FOLD_STORAGE_KEY = "twf_fold_events";
+
+const SECTION_CATEGORY_LABELS = {
+  event: "映像で起きたこと",
+  analysis: "読み（考察・仮説）",
+  fact: "確定事実",
+  supplement: "補足・整理"
+};
+
+const SECTION_CATEGORY_BY_ID = {
+  "f1-t1": "event",
+  "f1-t2": "event",
+  "f1-t3": "event",
+  "f1-thoughts": "analysis",
+  "f2-t1": "event",
+  "f2-t2": "event",
+  "f2-t3": "event",
+  "f2-t4": "event",
+  "f2-thoughts": "analysis",
+  "ly-timeline": "event",
+  "ly-voice": "event",
+  "ly-text": "event",
+  "ly-thoughts": "analysis",
+  "f3-frame": "supplement",
+  "f3-scenes": "event",
+  "f3-facts": "fact",
+  "f3-thoughts": "analysis",
+  "guilty-desc": "supplement",
+  "guilty-rec1": "event",
+  "guilty-rec2": "event",
+  "guilty-rec3": "event",
+  "guilty-thoughts": "analysis",
+  "souvenir-objects": "analysis",
+  "souvenir-points": "analysis",
+  "souvenir-position": "supplement",
+  "spectacle-content": "event",
+  "spectacle-points": "analysis",
+  "spectacle-position": "supplement",
+  "f4-01": "event",
+  "f4-02": "event",
+  "f4-03": "event",
+  "f4-04": "event",
+  "f4-05": "event",
+  "f4-06": "event",
+  "f4-07": "event",
+  "f4-08": "event",
+  "f4-09": "event",
+  "f4-10": "event",
+  "f4-11": "event",
+  "f4-12": "event",
+  "f4-trivia": "supplement",
+  "f4-summary": "fact",
+  "felix-facts": "fact",
+  "felix-file4-update": "fact",
+  "felix-hypothesis": "analysis"
+};
 
 function escapeHtml(text) {
   return text
@@ -319,10 +377,28 @@ function extractHeadingYear(text) {
   return match[1];
 }
 
+function prepareHeadingMetadata() {
+  if (!markdownContainer) return;
+  assignFile4AnchorIds();
+  const headings = markdownContainer.querySelectorAll("h2, h3");
+  let autoIdCounter = 1;
+
+  headings.forEach((heading) => {
+    if (!heading.id) {
+      // Keep URL hashes ASCII-only for headings without explicit anchors.
+      heading.id = `sec-${autoIdCounter}`;
+      autoIdCounter += 1;
+    }
+    if (!heading.dataset.cleanTitle) {
+      heading.dataset.cleanTitle = heading.textContent?.trim() ?? "";
+    }
+  });
+}
+
 function createTocItemElement(heading) {
   const li = document.createElement("li");
   const link = document.createElement("a");
-  const rawText = heading.textContent?.trim() ?? "";
+  const rawText = heading.dataset.cleanTitle || heading.textContent?.trim() || "";
   const yearLabel = extractHeadingYear(rawText);
 
   link.href = `#${heading.id}`;
@@ -345,21 +421,16 @@ function createTocItemElement(heading) {
 }
 
 function buildToc() {
-  if (!tocList) return;
+  if (!tocList || !markdownContainer) return;
   tocList.innerHTML = "";
   if (readingBarTocList) readingBarTocList.innerHTML = "";
-  assignFile4AnchorIds();
+  prepareHeadingMetadata();
+
   const headings = markdownContainer.querySelectorAll("h2, h3");
-  let autoIdCounter = 1;
   const desktopFragment = document.createDocumentFragment();
   const mobileFragment = document.createDocumentFragment();
 
   headings.forEach((heading) => {
-    if (!heading.id) {
-      // Keep URL hashes ASCII-only for headings without explicit anchors.
-      heading.id = `sec-${autoIdCounter}`;
-      autoIdCounter += 1;
-    }
     desktopFragment.appendChild(createTocItemElement(heading));
     if (readingBarTocList) {
       mobileFragment.appendChild(createTocItemElement(heading));
@@ -370,6 +441,459 @@ function buildToc() {
   if (readingBarTocList) {
     readingBarTocList.appendChild(mobileFragment);
   }
+}
+
+function setSectionCollapsed(sectionEl, collapsed) {
+  sectionEl.classList.toggle("is-collapsed", collapsed);
+  const body = sectionEl.querySelector(":scope > .h3-section__body");
+  if (body instanceof HTMLElement) {
+    body.hidden = collapsed;
+  }
+  const foldBtn = sectionEl.querySelector(":scope > h3 > .sec-fold-btn");
+  if (foldBtn instanceof HTMLButtonElement) {
+    foldBtn.setAttribute("aria-expanded", String(!collapsed));
+    foldBtn.textContent = collapsed ? "開く" : "畳む";
+  }
+}
+
+function syncFoldToggleUi() {
+  if (!foldEventsToggle || !markdownContainer) return;
+  const anyCollapsed = Boolean(markdownContainer.querySelector(".h3-section--event.is-collapsed"));
+  foldEventsToggle.setAttribute("aria-pressed", String(anyCollapsed));
+  foldEventsToggle.textContent = anyCollapsed
+    ? "「映像で起きたこと」をすべて開く"
+    : "「映像で起きたこと」を畳む";
+}
+
+function ensureSectionExpandedFor(node) {
+  if (!(node instanceof Element)) return;
+  const collapsedSec = node.closest(".h3-section.is-collapsed");
+  if (!collapsedSec) return;
+  setSectionCollapsed(collapsedSec, false);
+  syncFoldToggleUi();
+  window.dispatchEvent(new Event("resize"));
+}
+
+function enhanceSections() {
+  if (!markdownContainer) return;
+  const h3List = Array.from(markdownContainer.querySelectorAll("h3"));
+
+  h3List.forEach((h3) => {
+    const category = SECTION_CATEGORY_BY_ID[h3.id] || "supplement";
+    const badgeLabel = SECTION_CATEGORY_LABELS[category] || SECTION_CATEGORY_LABELS.supplement;
+
+    const sectionEl = document.createElement("section");
+    sectionEl.className = `h3-section h3-section--${category}`;
+    sectionEl.dataset.secCategory = category;
+
+    const bodyEl = document.createElement("div");
+    bodyEl.className = "h3-section__body";
+
+    const parent = h3.parentNode;
+    if (!parent) return;
+    parent.insertBefore(sectionEl, h3);
+    sectionEl.appendChild(h3);
+
+    const badge = document.createElement("span");
+    badge.className = `sec-badge sec-badge--${category}`;
+    badge.textContent = badgeLabel;
+    h3.appendChild(badge);
+
+    if (category === "event") {
+      const foldBtn = document.createElement("button");
+      foldBtn.type = "button";
+      foldBtn.className = "sec-fold-btn";
+      foldBtn.setAttribute("aria-expanded", "true");
+      foldBtn.setAttribute("aria-label", `${h3.dataset.cleanTitle || "この節"}を開閉`);
+      foldBtn.textContent = "畳む";
+      h3.appendChild(foldBtn);
+    }
+
+    while (sectionEl.nextSibling) {
+      const next = sectionEl.nextSibling;
+      if (
+        next instanceof Element &&
+        (["H2", "H3", "HR"].includes(next.tagName) || next.classList.contains("back-to-toc"))
+      ) {
+        break;
+      }
+      bodyEl.appendChild(next);
+    }
+
+    sectionEl.appendChild(bodyEl);
+  });
+}
+
+function readSavedFoldPreference() {
+  try {
+    return window.localStorage.getItem(FOLD_STORAGE_KEY) === "1";
+  } catch (_error) {
+    return false;
+  }
+}
+
+function writeSavedFoldPreference(collapsed) {
+  try {
+    window.localStorage.setItem(FOLD_STORAGE_KEY, collapsed ? "1" : "0");
+  } catch (_error) {
+    // Ignore storage errors in restricted browsing modes.
+  }
+}
+
+function wireSectionFolding() {
+  if (!markdownContainer) return;
+
+  if (readSavedFoldPreference()) {
+    markdownContainer.querySelectorAll(".h3-section--event").forEach((sec) => {
+      setSectionCollapsed(sec, true);
+    });
+  }
+  syncFoldToggleUi();
+
+  foldEventsToggle?.addEventListener("click", () => {
+    const anyCollapsed = Boolean(markdownContainer.querySelector(".h3-section--event.is-collapsed"));
+    const nextCollapsed = !anyCollapsed;
+    markdownContainer.querySelectorAll(".h3-section--event").forEach((sec) => {
+      setSectionCollapsed(sec, nextCollapsed);
+    });
+    writeSavedFoldPreference(nextCollapsed);
+    syncFoldToggleUi();
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  markdownContainer.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const foldBtn = event.target.closest(".sec-fold-btn");
+    if (!foldBtn) return;
+    const sectionEl = foldBtn.closest(".h3-section");
+    if (!sectionEl) return;
+    const willCollapse = !sectionEl.classList.contains("is-collapsed");
+    setSectionCollapsed(sectionEl, willCollapse);
+    const anyStillCollapsed = Boolean(markdownContainer.querySelector(".h3-section--event.is-collapsed"));
+    if (!anyStillCollapsed) {
+      writeSavedFoldPreference(false);
+    }
+    syncFoldToggleUi();
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const anchor = event.target.closest('a[href^="#"]');
+    if (!anchor || anchor.classList.contains("back-to-toc__link")) return;
+    const rawHref = anchor.getAttribute("href") || "";
+    if (rawHref.length <= 1) return;
+    const targetId = decodeURIComponent(rawHref.slice(1));
+    const target = document.getElementById(targetId);
+    if (target) {
+      ensureSectionExpandedFor(target);
+    }
+  });
+}
+
+function isValidGlossaryBoundary(text, start, alias) {
+  const end = start + alias.length;
+  const prev = start > 0 ? text[start - 1] : "";
+  const next = end < text.length ? text[end] : "";
+
+  if (/^[A-Za-z0-9]/.test(alias) && /[A-Za-z0-9_]/.test(prev)) return false;
+  if (/[A-Za-z0-9]$/.test(alias) && /[A-Za-z0-9_]/.test(next)) return false;
+
+  if (
+    alias === "Bon" &&
+    (text.startsWith("'s", end) || text.startsWith("’s", end) || text.startsWith("（灰色の存在）", end))
+  ) {
+    return false;
+  }
+
+  const katakanaChar = /[\u30A1-\u30FA\u30FC]/;
+  if (katakanaChar.test(alias[0]) && katakanaChar.test(prev)) return false;
+  if (katakanaChar.test(alias[alias.length - 1]) && katakanaChar.test(next)) return false;
+
+  return true;
+}
+
+function collectGlossaryScopes() {
+  if (!markdownContainer) return [];
+  const scopes = [];
+  let currentIntroNodes = [];
+
+  Array.from(markdownContainer.children).forEach((child) => {
+    if (child.tagName === "H2" || child.tagName === "HR" || child.classList.contains("back-to-toc")) {
+      if (currentIntroNodes.length > 0) {
+        scopes.push(currentIntroNodes);
+        currentIntroNodes = [];
+      }
+      return;
+    }
+    if (child.classList.contains("h3-section")) {
+      if (currentIntroNodes.length > 0) {
+        scopes.push(currentIntroNodes);
+        currentIntroNodes = [];
+      }
+      const body = child.querySelector(":scope > .h3-section__body");
+      if (body) scopes.push([body]);
+      return;
+    }
+    currentIntroNodes.push(child);
+  });
+
+  if (currentIntroNodes.length > 0) {
+    scopes.push(currentIntroNodes);
+  }
+  return scopes;
+}
+
+function enhanceGlossaryTerms(glossaryItems) {
+  if (!markdownContainer || !Array.isArray(glossaryItems) || glossaryItems.length === 0) return;
+
+  const candidates = [];
+  glossaryItems.forEach((entry) => {
+    if (!entry || !entry.id || !Array.isArray(entry.aliases)) return;
+    entry.aliases.forEach((alias) => {
+      if (typeof alias === "string" && alias.trim()) {
+        candidates.push({ id: entry.id, alias: alias.trim() });
+      }
+    });
+  });
+  candidates.sort((a, b) => b.alias.length - a.alias.length);
+  if (candidates.length === 0) return;
+
+  const excludedTags = new Set([
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "A",
+    "BUTTON",
+    "CODE",
+    "PRE",
+    "MARK",
+    "FIGCAPTION",
+    "SCRIPT",
+    "STYLE"
+  ]);
+
+  const scopes = collectGlossaryScopes();
+  scopes.forEach((rootNodes) => {
+    const seenIds = new Set();
+    const textNodes = [];
+
+    rootNodes.forEach((rootNode) => {
+      const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (excludedTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+          if (
+            parent.closest(
+              "a, button, code, pre, figcaption, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card"
+            )
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      while (walker.nextNode()) {
+        textNodes.push(walker.currentNode);
+      }
+    });
+
+    textNodes.forEach((textNode) => {
+      if (seenIds.size >= glossaryItems.length) return;
+      const text = textNode.nodeValue;
+      if (!text) return;
+
+      let cursor = 0;
+      let fragment = null;
+
+      while (cursor < text.length) {
+        let best = null;
+
+        for (const candidate of candidates) {
+          if (seenIds.has(candidate.id)) continue;
+          let searchFrom = cursor;
+          while (searchFrom < text.length) {
+            const idx = text.indexOf(candidate.alias, searchFrom);
+            if (idx === -1) break;
+            if (isValidGlossaryBoundary(text, idx, candidate.alias)) {
+              if (
+                !best ||
+                idx < best.start ||
+                (idx === best.start && candidate.alias.length > best.alias.length)
+              ) {
+                best = { id: candidate.id, alias: candidate.alias, start: idx };
+              }
+              break;
+            }
+            searchFrom = idx + 1;
+          }
+        }
+
+        if (!best) break;
+
+        if (!fragment) {
+          fragment = document.createDocumentFragment();
+        }
+        if (best.start > cursor) {
+          fragment.append(text.slice(cursor, best.start));
+        }
+
+        const wrap = document.createElement("span");
+        wrap.className = "term-wrap";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "term-trigger";
+        btn.dataset.termId = best.id;
+        btn.setAttribute("aria-expanded", "false");
+        btn.textContent = best.alias;
+
+        wrap.appendChild(btn);
+        fragment.appendChild(wrap);
+        seenIds.add(best.id);
+        cursor = best.start + best.alias.length;
+      }
+
+      if (fragment) {
+        if (cursor < text.length) {
+          fragment.append(text.slice(cursor));
+        }
+        textNode.parentNode?.replaceChild(fragment, textNode);
+      }
+    });
+  });
+}
+
+function wireGlossaryPopovers(glossaryItems) {
+  if (!markdownContainer || !Array.isArray(glossaryItems) || glossaryItems.length === 0) return;
+
+  const entryMap = new Map();
+  glossaryItems.forEach((entry) => {
+    if (entry && entry.id) {
+      entryMap.set(entry.id, entry);
+    }
+  });
+
+  let activeTrigger = null;
+  let activeCard = null;
+
+  const closePopover = ({ restoreFocus = false } = {}) => {
+    if (activeCard) {
+      activeCard.remove();
+      activeCard = null;
+    }
+    if (activeTrigger) {
+      const prevTrigger = activeTrigger;
+      activeTrigger = null;
+      prevTrigger.setAttribute("aria-expanded", "false");
+      if (restoreFocus) {
+        prevTrigger.focus();
+      }
+    }
+  };
+
+  const openPopover = (trigger, entry) => {
+    closePopover();
+    const wrap = trigger.closest(".term-wrap");
+    if (!wrap) return;
+
+    const card = document.createElement("div");
+    card.className = "term-card";
+    card.setAttribute("role", "dialog");
+    card.setAttribute("aria-label", `${entry.term}の説明`);
+
+    const rect = trigger.getBoundingClientRect();
+    if (rect.left > window.innerWidth / 2) {
+      card.classList.add("term-card--right");
+    }
+    if (window.innerHeight - rect.bottom < 170 && rect.top > 190) {
+      card.classList.add("term-card--above");
+    }
+
+    const header = document.createElement("div");
+    header.className = "term-card__header";
+
+    const title = document.createElement("span");
+    title.className = "term-card__title";
+    title.textContent = entry.term;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "term-card__close";
+    closeBtn.setAttribute("aria-label", "説明を閉じる");
+    closeBtn.textContent = "閉じる";
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    card.appendChild(header);
+
+    const content = document.createElement("div");
+    content.className = "term-card__content";
+
+    const safeImg = entry.image ? sanitizeImageSrc(entry.image) : "";
+    if (safeImg) {
+      const img = document.createElement("img");
+      img.className = "term-card__img";
+      img.src = safeImg;
+      img.alt = entry.term;
+      img.loading = "lazy";
+      content.appendChild(img);
+    }
+
+    const desc = document.createElement("p");
+    desc.className = "term-card__desc";
+    desc.textContent = entry.description;
+    content.appendChild(desc);
+
+    card.appendChild(content);
+    wrap.appendChild(card);
+
+    trigger.setAttribute("aria-expanded", "true");
+    activeTrigger = trigger;
+    activeCard = card;
+  };
+
+  markdownContainer.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+
+    const closeBtn = event.target.closest(".term-card__close");
+    if (closeBtn) {
+      event.preventDefault();
+      closePopover({ restoreFocus: true });
+      return;
+    }
+
+    const trigger = event.target.closest(".term-trigger");
+    if (!trigger || !(trigger instanceof HTMLButtonElement)) return;
+
+    const termId = trigger.dataset.termId || "";
+    const entry = entryMap.get(termId);
+    if (!entry) return;
+
+    if (activeTrigger === trigger) {
+      closePopover();
+    } else {
+      openPopover(trigger, entry);
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!activeCard) return;
+    if (!(event.target instanceof Element)) return;
+    if (!event.target.closest(".term-wrap")) {
+      closePopover();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && activeCard) {
+      event.preventDefault();
+      closePopover({ restoreFocus: true });
+    }
+  });
 }
 
 function wireTocToggle() {
@@ -565,7 +1089,7 @@ function addBackToTocLinks() {
   headings.forEach((heading, index) => {
     const backToToc = document.createElement("div");
     const link = document.createElement("a");
-    const headingText = heading.textContent?.trim() || "この章";
+    const headingText = heading.dataset.cleanTitle || heading.textContent?.trim() || "この章";
 
     backToToc.className = "back-to-toc";
     link.className = "back-to-toc__link";
@@ -617,7 +1141,9 @@ function highlightKeyword(keyword) {
     acceptNode(node) {
       if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
       if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-      if (node.parentElement.closest(".back-to-toc")) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card")) {
+        return NodeFilter.FILTER_REJECT;
+      }
       if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -647,6 +1173,7 @@ function highlightKeyword(keyword) {
     textNode.parentNode?.replaceChild(fragment, textNode);
   });
 
+  createdMarks.forEach((mark) => ensureSectionExpandedFor(mark));
   return createdMarks;
 }
 
@@ -690,6 +1217,7 @@ function wireSearch() {
     const total = currentMatches.length;
     activeMatchIndex = ((index % total) + total) % total;
     const target = currentMatches[activeMatchIndex];
+    ensureSectionExpandedFor(target);
     target.classList.add("is-active");
     updateSearchUi(currentKeyword);
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -750,6 +1278,7 @@ function scrollToLocationHash() {
   const targetId = decodeURIComponent(rawHash.slice(1));
   const target = document.getElementById(targetId);
   if (target) {
+    ensureSectionExpandedFor(target);
     target.scrollIntoView({ block: "start" });
   }
 }
@@ -760,26 +1289,48 @@ async function init() {
 
   let markdown = FALLBACK_NOTE;
   let loadedFromFile = false;
+  let glossaryItems = [];
 
-  try {
-    const response = await fetch("./note.md", { cache: "no-store" });
-    if (response.ok) {
-      markdown = await response.text();
+  const [noteResult, glossaryResult] = await Promise.allSettled([
+    fetch("./note.md", { cache: "no-store" }),
+    fetch("./glossary.json", { cache: "no-store" })
+  ]);
+
+  if (noteResult.status === "fulfilled" && noteResult.value.ok) {
+    try {
+      markdown = await noteResult.value.text();
       loadedFromFile = true;
+    } catch (_error) {
+      loadedFromFile = false;
     }
-  } catch (_error) {
-    loadedFromFile = false;
+  }
+
+  if (glossaryResult.status === "fulfilled" && glossaryResult.value.ok) {
+    try {
+      const parsed = await glossaryResult.value.json();
+      if (Array.isArray(parsed)) {
+        glossaryItems = parsed;
+      }
+    } catch (_error) {
+      glossaryItems = [];
+    }
   }
 
   const rendered = simpleMarkdownToHtml(normalizeSource(markdown));
   markdownContainer.innerHTML = sanitizeGeneratedHtml(rendered);
   requestAnimationFrame(() => {
-    buildToc();
+    prepareHeadingMetadata();
     addBackToTocLinks();
+    enhanceSections();
+    enhanceGlossaryTerms(glossaryItems);
+    buildToc();
+    wireSectionFolding();
+    wireGlossaryPopovers(glossaryItems);
     wireTocToggle();
     wireBackToTocLinks();
     wireActiveHeadingTracker();
     wireSearch();
+    window.addEventListener("hashchange", scrollToLocationHash);
     if (!loadedFromFile) {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
       searchToolbar?.classList.add("is-active");

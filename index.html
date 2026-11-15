@@ -117,6 +117,22 @@
 
         <section>
           <h2>本文アーカイブ</h2>
+          <div class="article-controls" aria-label="表示の切り替えと区分">
+            <div class="sec-legend" aria-label="節の区分">
+              <span class="sec-badge sec-badge--event">映像で起きたこと</span>
+              <span class="sec-badge sec-badge--analysis">読み（考察・仮説）</span>
+              <span class="sec-badge sec-badge--fact">確定事実</span>
+              <span class="sec-badge sec-badge--supplement">補足・整理</span>
+            </div>
+            <button
+              id="foldEventsToggle"
+              class="fold-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              「映像で起きたこと」を畳む
+            </button>
+          </div>
           <div id="searchToolbar" class="search-toolbar">
             <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
             <div id="searchNav" class="search-nav" hidden>
