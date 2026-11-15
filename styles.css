@@ -953,6 +953,15 @@ button:active {
   white-space: nowrap;
 }
 
+/* 404ページ（現在地バーがないため、上の余白を取らない） */
+body.error-page {
+  padding-top: 0;
+}
+
+.error-page__back {
+  margin: 0;
+}
+
 @media (max-width: 960px) {
   body {
     padding-top: var(--reading-bar-h);
