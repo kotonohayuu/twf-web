@@ -46,17 +46,17 @@ const IS_CHAPTER_PAGE = Boolean(PAGE_CHAPTER_SLUG);
 
 // 章ページの名前（URL）と、note.md の章の見出し（##）の書き出しの対応。
 // 章を増やすときは、ここに1行足し、同じ名前の HTML ファイル（例：file5.html）と sitemap.xml の行を足す。
-// released（公開日）・length（映像の長さ）・note は、親ページの章の一覧に出す。値は note.md の各章の冒頭に合わせる。
-// 隠し動画（Lucky You・Guilty）の公開日は、視聴できるようになった日。長さが note.md にない章は空にしている。
+// released（公開日）・note は、親ページの章の一覧に出す。公開日は note.md の各章の冒頭に合わせる。
+// 隠し動画（Lucky You・Guilty）の公開日は、視聴できるようになった日。
 const CHAPTERS = [
-  { slug: "file1", prefix: "ファイル1", released: "2020/04/26", length: "11:05" },
-  { slug: "file2", prefix: "ファイル2", released: "2020/06/28", length: "17:55" },
-  { slug: "lucky-you", prefix: "Lucky You", released: "2020/06/28", length: "4:04" },
-  { slug: "file3", prefix: "ファイル3", released: "2021/03/19", length: "" },
-  { slug: "guilty", prefix: "Guilty", released: "2021/03/19", length: "7:04" },
-  { slug: "souvenir", prefix: "souvenir", released: "2023/09/13", length: "0:37" },
-  { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11", length: "4:11" },
-  { slug: "file4", prefix: "ファイル4", released: "2024/02/09", length: "" },
+  { slug: "file1", prefix: "ファイル1", released: "2020/04/26" },
+  { slug: "file2", prefix: "ファイル2", released: "2020/06/28" },
+  { slug: "lucky-you", prefix: "Lucky You", released: "2020/06/28" },
+  { slug: "file3", prefix: "ファイル3", released: "2021/03/19" },
+  { slug: "guilty", prefix: "Guilty", released: "2021/03/19" },
+  { slug: "souvenir", prefix: "souvenir", released: "2023/09/13" },
+  { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11" },
+  { slug: "file4", prefix: "ファイル4", released: "2024/02/09" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
@@ -772,7 +772,6 @@ function renderChapterIndex() {
     meta.className = "tape-card__meta";
     const parts = [];
     if (group.def.released) parts.push(`公開 ${group.def.released}`);
-    if (group.def.length) parts.push(`長さ ${group.def.length}`);
     if (group.def.note) parts.push(group.def.note);
     parts.forEach((text) => {
       const part = document.createElement("span");

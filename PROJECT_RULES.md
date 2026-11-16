@@ -11,7 +11,7 @@
 - `index.html` は親ページ（トップ）。クイックガイド、主要年表、章の一覧を置く。
 - 章ごとに子ページがある（`file1.html`・`file2.html`・`lucky-you.html`・`file3.html`・`guilty.html`・`souvenir.html`・`spectacle.html`・`file4.html`・`felix.html`）。公開URLは `.html` を省いた形（例：`twf-web.pages.dev/file2`）。
 - 本文は `note.md` の1ファイルのまま管理する。各子ページは、`app.js` が `note.md` から該当する章（`##` 見出し）を取り出して表示する。
-- 親ページの章の一覧には、各章の画像・公開日・映像の長さを出す。画像はその章の本文の最初の画像で、一覧用の小さい画像（224×168、上端に合わせて切り出したWebP）を `images/cards/` に同じファイル名で置く（なければ本文の画像をそのまま使う）。公開日と長さは `app.js` の `CHAPTERS` に書く（`note.md` の各章の冒頭と合わせる）。
+- 親ページの章の一覧には、各章の画像と公開日を出す。画像はその章の本文の最初の画像で、一覧用の小さい画像（224×168、上端に合わせて切り出したWebP）を `images/cards/` に同じファイル名で置く（なければ本文の画像をそのまま使う）。公開日は `app.js` の `CHAPTERS` に書く（`note.md` の各章の冒頭と合わせる）。
 - 章を増やすときは、`app.js` の `CHAPTERS` に1行足し、同じ名前の子ページ（既存の子ページの複製で、`<title>` などと `data-chapter` を書き換えたもの）と、`sitemap.xml` の行を足す。
 
 ## 画像の管理
