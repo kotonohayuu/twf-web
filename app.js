@@ -717,13 +717,13 @@ function mountCurrentChapter({ useFirst = false } = {}) {
   }
   currentChapter.root = markdownContainer;
 
-  // 章の題名の上に出す番号（「02 / 09」。表示は styles.css の h2[data-tape-label]）。
+  // 章の題名の上に出す表示（「PLAY   02 / 09」。見た目は styles.css の h2[data-tape-label]）。
   const linked = chapterGroups.filter((group) => group.slug);
   const position = linked.indexOf(currentChapter);
   const chapterHeading = markdownContainer.querySelector("h2");
   if (chapterHeading && position >= 0) {
     const pad = (value) => String(value).padStart(2, "0");
-    chapterHeading.dataset.tapeLabel = `${pad(position + 1)} / ${pad(linked.length)}`;
+    chapterHeading.dataset.tapeLabel = `PLAY   ${pad(position + 1)} / ${pad(linked.length)}`;
   }
 }
 
@@ -790,6 +790,44 @@ function renderChapterIndex() {
 function playTapeStart() {
   document.body.classList.add("is-tape-start");
   window.setTimeout(() => document.body.classList.remove("is-tape-start"), 700);
+  scrambleTapeLabel();
+}
+
+// 章の題名の上の表示（PLAY 02 / 09）を、でたらめな文字から左から順に正しい文字へ置き換えて出す。
+// 0.8秒で終わる。動きを減らす設定の端末では、最初から正しい文字を出す。
+const SCRAMBLE_GLYPHS = "0123456789ABCDEFGHJKLMNPRSTUVWXYZ#%&/<>*+=-";
+const SCRAMBLE_STEPS = 20; // 1コマ40ミリ秒
+const SCRAMBLE_HOLD = 3; // 最初の数コマは、すべてでたらめな文字のまま
+
+function scrambleTapeLabel() {
+  const heading = markdownContainer?.querySelector("h2[data-tape-label]");
+  if (!heading || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const finalText = heading.dataset.tapeLabel || "";
+  const chars = Array.from(finalText);
+
+  const render = (step) => {
+    const progress = Math.max(0, (step - SCRAMBLE_HOLD) / (SCRAMBLE_STEPS - SCRAMBLE_HOLD));
+    const revealed = Math.floor(chars.length * progress);
+    heading.dataset.tapeLabel = chars
+      .map((ch, index) =>
+        index < revealed || ch === " "
+          ? ch
+          : SCRAMBLE_GLYPHS[Math.floor(Math.random() * SCRAMBLE_GLYPHS.length)]
+      )
+      .join("");
+  };
+
+  let step = 0;
+  render(step);
+  const timer = window.setInterval(() => {
+    step += 1;
+    if (step >= SCRAMBLE_STEPS) {
+      window.clearInterval(timer);
+      heading.dataset.tapeLabel = finalText;
+      return;
+    }
+    render(step);
+  }, 40);
 }
 
 // 章ページ：読み進んだ位置を示す線を、画面の上端に出す。

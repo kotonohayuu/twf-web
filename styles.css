@@ -1578,9 +1578,9 @@ body.error-page {
   text-decoration: underline;
 }
 
-/* 章ページの題名：再生中の表示と章の番号（番号は app.js が data-tape-label に入れる） */
+/* 章ページの題名：再生中の表示と章の番号（文字は app.js が data-tape-label に入れる） */
 .page-chapter .markdown-body > h2[data-tape-label]::before {
-  content: "▶ PLAY   " attr(data-tape-label);
+  content: "▶ " attr(data-tape-label);
   display: block;
   margin-bottom: 2px;
   color: #f4f4f4;
