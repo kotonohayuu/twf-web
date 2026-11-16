@@ -74,6 +74,9 @@ const FOLD_STORAGE_KEY = "twf_fold_events";
 const GUIDE_SPOILER_STORAGE_KEY = "twf_guide_spoiler";
 const TIMELINE_SPOILER_STORAGE_KEY = "twf_timeline_spoiler";
 const FORWARD_SPOILER_STORAGE_KEY = "twf_forward_spoilers";
+const SEARCH_HISTORY_STORAGE_KEY = "twf_search_history";
+const SEARCH_HISTORY_LIMIT = 8;
+const SEARCH_SUGGEST_LIMIT = 8;
 
 // note.md の目印：考察の見出し行や画像行の末尾に {ネタバレ:ファイル4} と書くと、
 // その考察（図）は「ファイル4までの内容に触れる」ものとして、開くまで畳んで表示する。
@@ -1651,12 +1654,147 @@ function describeMatchContext(mark) {
   };
 }
 
-function wireSearch() {
+function readSearchHistory() {
+  try {
+    const raw = window.localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set();
+    const list = [];
+    for (const item of parsed) {
+      if (typeof item !== "string") continue;
+      const trimmed = item.trim();
+      const key = trimmed.toLowerCase();
+      if (!trimmed || seen.has(key)) continue;
+      seen.add(key);
+      list.push(trimmed);
+      if (list.length >= SEARCH_HISTORY_LIMIT) break;
+    }
+    return list;
+  } catch (_error) {
+    return [];
+  }
+}
+
+function writeSearchHistory(list) {
+  try {
+    window.localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(list.slice(0, SEARCH_HISTORY_LIMIT)));
+  } catch (_error) {
+    // Ignore storage errors in restricted browsing modes.
+  }
+}
+
+// 検索候補の絞り込み用（大文字小文字・全角半角・ひらがなカタカナの違いを吸収する）。
+function normalizeForSuggest(text) {
+  return String(text ?? "")
+    .trim()
+    .normalize("NFKC")
+    .replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
+    .toLowerCase();
+}
+
+// 本文中の検索対象テキストを集め、候補ごとの一致件数を高速に数えられるようにする。
+function collectSearchCorpus() {
+  const chunks = [];
+  searchGroups().forEach((group) => {
+    const walker = document.createTreeWalker(group.root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    while (walker.nextNode()) {
+      chunks.push(walker.currentNode.nodeValue);
+    }
+  });
+  return chunks.join("\0");
+}
+
+function countKeywordInCorpus(corpus, keyword) {
+  if (!corpus || !keyword) return 0;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const matches = corpus.match(new RegExp(escaped, "gi"));
+  return matches ? matches.length : 0;
+}
+
+const STARTER_SUGGESTIONS = [
+  "ソフィー",
+  "フェリックス",
+  "ジャック",
+  "ローズマリー",
+  "ボン",
+  "BunnyFarm",
+  "K-9保管施設",
+  "Wonderland",
+  "1974"
+];
+
+const EXTRA_SUGGESTIONS = [
+  "1967",
+  "1970",
+  "1974/05/02",
+  "1978",
+  "1982",
+  "Showstoppers",
+  "Little Bon",
+  "Safety in pills",
+  "I'm still here",
+  "きれいにする"
+];
+
+function buildSearchCandidates(glossaryItems, corpus) {
+  const candidates = [];
+  const seenKeywords = new Set();
+
+  const addCandidate = (keyword, meta = "", entryId = "", isStarter = false) => {
+    const trimmed = typeof keyword === "string" ? keyword.trim() : "";
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seenKeywords.has(key)) return;
+    const count = countKeywordInCorpus(corpus, trimmed);
+    if (count <= 0) return;
+    seenKeywords.add(key);
+    candidates.push({
+      keyword: trimmed,
+      meta: meta && meta !== trimmed ? meta : "",
+      entryId,
+      isStarter,
+      count,
+      normKeyword: normalizeForSuggest(trimmed),
+      normMeta: normalizeForSuggest(meta)
+    });
+  };
+
+  STARTER_SUGGESTIONS.forEach((kw) => addCandidate(kw, "", "", true));
+
+  if (Array.isArray(glossaryItems)) {
+    glossaryItems.forEach((entry) => {
+      if (!entry || !Array.isArray(entry.aliases)) return;
+      const term = typeof entry.term === "string" ? entry.term.trim() : "";
+      entry.aliases.forEach((alias) => {
+        addCandidate(alias, term, entry.id || "", false);
+      });
+    });
+  }
+
+  EXTRA_SUGGESTIONS.forEach((kw) => addCandidate(kw, "", "", false));
+  return candidates;
+}
+
+function wireSearch(glossaryItems = []) {
   if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
   let inputDebounceTimer = null;
   let currentKeyword = "";
   let currentMatches = [];
   let activeMatchIndex = -1;
+  let searchHistory = readSearchHistory();
+  const searchCorpus = collectSearchCorpus();
+  const searchCandidates = buildSearchCandidates(glossaryItems, searchCorpus);
 
   // 狭い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
   const narrowQuery = window.matchMedia("(max-width: 640px)");
@@ -1823,17 +1961,44 @@ function wireSearch() {
     searchResultsList.scrollTop = 0;
 
     if (searchResultsNote && total > SEARCH_LIST_LIMIT) {
-      searchResultsNote.textContent = `一覧に出しているのは先頭の${SEARCH_LIST_LIMIT}件。残りは「次へ」で移動できる。`;
+      const hasLocal = IS_CHAPTER_PAGE && localMatchIndexes().length > 0;
+      searchResultsNote.textContent = hasLocal
+        ? `一覧に出しているのは先頭の${SEARCH_LIST_LIMIT}件まで（この章の中は「次へ」でも移動できる）。キーワードを絞ると探しやすい。`
+        : `一覧に出しているのは先頭の${SEARCH_LIST_LIMIT}件まで。キーワードを絞ると探しやすい。`;
     }
     searchResults.hidden = false;
     applyResultsOpen();
   };
+
+  let searchCloseButton = null;
+  if (searchToolbar) {
+    const controls = document.createElement("div");
+    controls.className = "search-toolbar__controls";
+    if (searchNav) {
+      searchToolbar.insertBefore(controls, searchNav);
+      controls.appendChild(searchNav);
+    } else if (searchResults) {
+      searchToolbar.insertBefore(controls, searchResults);
+    } else {
+      searchToolbar.appendChild(controls);
+    }
+    searchCloseButton = document.createElement("button");
+    searchCloseButton.id = "searchCloseButton";
+    searchCloseButton.type = "button";
+    searchCloseButton.className = "search-toolbar__close";
+    searchCloseButton.setAttribute("aria-label", "検索を閉じて入力欄も消す");
+    searchCloseButton.title = "検索を閉じる";
+    searchCloseButton.textContent = "×";
+    searchCloseButton.hidden = true;
+    controls.appendChild(searchCloseButton);
+  }
 
   const updateSearchUi = (keyword) => {
     if (!keyword) {
       summaryStatus.textContent = "";
       summaryStatus.classList.remove("error");
       if (searchNav) searchNav.hidden = true;
+      if (searchCloseButton) searchCloseButton.hidden = true;
       if (searchToolbar) searchToolbar.classList.remove("is-active");
       return;
     }
@@ -1843,6 +2008,7 @@ function wireSearch() {
       summaryStatus.textContent = `「${keyword}」の一致: 0件`;
       summaryStatus.classList.add("error");
       if (searchNav) searchNav.hidden = true;
+      if (searchCloseButton) searchCloseButton.hidden = false;
       if (searchToolbar) searchToolbar.classList.add("is-active");
       return;
     }
@@ -1864,6 +2030,7 @@ function wireSearch() {
     summaryStatus.textContent = `「${keyword}」の一致: ${countLabel}${inClosedFold ? "（畳まれた箇所の中）" : ""}`;
     summaryStatus.classList.remove("error");
     if (searchNav) searchNav.hidden = local.length === 0;
+    if (searchCloseButton) searchCloseButton.hidden = false;
     if (searchToolbar) searchToolbar.classList.add("is-active");
   };
 
@@ -1943,24 +2110,333 @@ function wireSearch() {
     updateSearchUi(keyword);
   };
 
-  searchButton.addEventListener("click", () => runSearch({ shouldScroll: true, step: 1 }));
+  // 検索履歴と検索候補のドロップダウンを、#searchInput を囲む .search-box の中に組み立てる。
+  const searchBox = document.createElement("div");
+  searchBox.className = "search-box";
+  searchInput.parentNode?.insertBefore(searchBox, searchInput);
+  searchBox.appendChild(searchInput);
+
+  const suggestPanel = document.createElement("div");
+  suggestPanel.id = "searchSuggestPanel";
+  suggestPanel.className = "search-suggest";
+  suggestPanel.hidden = true;
+  searchBox.appendChild(suggestPanel);
+
+  searchInput.setAttribute("autocomplete", "off");
+  searchInput.setAttribute("role", "combobox");
+  searchInput.setAttribute("aria-autocomplete", "list");
+  searchInput.setAttribute("aria-expanded", "false");
+  searchInput.setAttribute("aria-controls", "searchSuggestPanel");
+
+  let suggestOpen = false;
+  let highlightedSuggestIndex = -1;
+  let visibleSuggestButtons = [];
+  let suppressNextFocusOpen = false;
+
+  const recordSearchHistory = (keyword) => {
+    const trimmed = typeof keyword === "string" ? keyword.trim() : "";
+    if (!trimmed) return;
+    const key = trimmed.toLowerCase();
+    searchHistory = [trimmed, ...searchHistory.filter((item) => item.toLowerCase() !== key)].slice(
+      0,
+      SEARCH_HISTORY_LIMIT
+    );
+    writeSearchHistory(searchHistory);
+  };
+
+  const removeSearchHistoryItem = (keyword) => {
+    const key = keyword.toLowerCase();
+    searchHistory = searchHistory.filter((item) => item.toLowerCase() !== key);
+    writeSearchHistory(searchHistory);
+  };
+
+  const clearAllSearchHistory = () => {
+    searchHistory = [];
+    writeSearchHistory(searchHistory);
+  };
+
+  const getFilteredSuggestions = (rawQuery) => {
+    const normQ = normalizeForSuggest(rawQuery);
+    const matchingHistory = normQ
+      ? searchHistory.filter((item) => normalizeForSuggest(item).includes(normQ))
+      : searchHistory.slice();
+
+    const historyKeys = new Set(matchingHistory.map((item) => item.toLowerCase()));
+    const pool = searchCandidates.filter((cand) => !historyKeys.has(cand.keyword.toLowerCase()));
+
+    let matchingCandidates;
+    if (!normQ) {
+      matchingCandidates = pool.filter((cand) => cand.isStarter).slice(0, SEARCH_SUGGEST_LIMIT);
+    } else {
+      matchingCandidates = pool
+        .filter((cand) => cand.normKeyword.includes(normQ) || cand.normMeta.includes(normQ))
+        .sort((a, b) => {
+          const aExact = a.normKeyword === normQ ? 1 : 0;
+          const bExact = b.normKeyword === normQ ? 1 : 0;
+          if (aExact !== bExact) return bExact - aExact;
+
+          const aPrefix = a.normKeyword.startsWith(normQ) ? 1 : 0;
+          const bPrefix = b.normKeyword.startsWith(normQ) ? 1 : 0;
+          if (aPrefix !== bPrefix) return bPrefix - aPrefix;
+
+          const aDirect = a.normKeyword.includes(normQ) ? 1 : 0;
+          const bDirect = b.normKeyword.includes(normQ) ? 1 : 0;
+          if (aDirect !== bDirect) return bDirect - aDirect;
+
+          return b.count - a.count;
+        })
+        .slice(0, SEARCH_SUGGEST_LIMIT);
+    }
+
+    return { matchingHistory, matchingCandidates };
+  };
+
+  const syncSuggestHighlight = () => {
+    visibleSuggestButtons.forEach((btn, idx) => {
+      const active = idx === highlightedSuggestIndex;
+      btn.classList.toggle("is-highlighted", active);
+      btn.setAttribute("aria-selected", String(active));
+      if (active) {
+        searchInput.setAttribute("aria-activedescendant", btn.id);
+        btn.scrollIntoView({ block: "nearest" });
+      }
+    });
+    if (highlightedSuggestIndex < 0) {
+      searchInput.removeAttribute("aria-activedescendant");
+    }
+  };
+
+  const closeSuggestPanel = () => {
+    if (!suggestOpen && suggestPanel.hidden) return;
+    suggestOpen = false;
+    suggestPanel.hidden = true;
+    highlightedSuggestIndex = -1;
+    searchInput.setAttribute("aria-expanded", "false");
+    searchInput.removeAttribute("aria-activedescendant");
+  };
+
+  const applySuggestion = (keyword) => {
+    if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
+    searchInput.value = keyword;
+    recordSearchHistory(keyword);
+    closeSuggestPanel();
+    runSearch({ shouldScroll: true, step: 1 });
+  };
+
+  const renderSuggestPanel = () => {
+    const rawQuery = searchInput.value.trim();
+    const { matchingHistory, matchingCandidates } = getFilteredSuggestions(rawQuery);
+    suggestPanel.textContent = "";
+    visibleSuggestButtons = [];
+    highlightedSuggestIndex = -1;
+
+    if (matchingHistory.length === 0 && matchingCandidates.length === 0) {
+      closeSuggestPanel();
+      return;
+    }
+
+    let optionSeq = 0;
+
+    if (matchingHistory.length > 0) {
+      const group = document.createElement("div");
+      group.className = "search-suggest__group";
+
+      const head = document.createElement("div");
+      head.className = "search-suggest__head";
+
+      const title = document.createElement("span");
+      title.className = "search-suggest__title";
+      title.textContent = "最近の検索";
+
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "search-suggest__clear-all";
+      clearBtn.textContent = "履歴を消す";
+      clearBtn.addEventListener("click", () => {
+        clearAllSearchHistory();
+        renderSuggestPanel();
+        suppressNextFocusOpen = true;
+        searchInput.focus();
+        suppressNextFocusOpen = false;
+      });
+
+      head.append(title, clearBtn);
+      group.appendChild(head);
+
+      const list = document.createElement("ul");
+      list.className = "search-suggest__list";
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", "最近の検索");
+
+      matchingHistory.forEach((kw) => {
+        const li = document.createElement("li");
+        li.className = "search-suggest__row";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = `searchSuggestOpt-${optionSeq}`;
+        optionSeq += 1;
+        btn.className = "search-suggest__btn";
+        btn.setAttribute("role", "option");
+        btn.setAttribute("aria-selected", "false");
+        btn.dataset.keyword = kw;
+
+        const label = document.createElement("span");
+        label.className = "search-suggest__keyword";
+        label.textContent = kw;
+        btn.appendChild(label);
+
+        btn.addEventListener("click", () => applySuggestion(kw));
+        visibleSuggestButtons.push(btn);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "search-suggest__remove";
+        removeBtn.setAttribute("aria-label", `「${kw}」を履歴から削除`);
+        removeBtn.textContent = "×";
+        removeBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          removeSearchHistoryItem(kw);
+          renderSuggestPanel();
+          suppressNextFocusOpen = true;
+          searchInput.focus();
+          suppressNextFocusOpen = false;
+        });
+
+        li.append(btn, removeBtn);
+        list.appendChild(li);
+      });
+
+      group.appendChild(list);
+      suggestPanel.appendChild(group);
+    }
+
+    if (matchingCandidates.length > 0) {
+      const group = document.createElement("div");
+      group.className = "search-suggest__group";
+
+      const head = document.createElement("div");
+      head.className = "search-suggest__head";
+      const title = document.createElement("span");
+      title.className = "search-suggest__title";
+      title.textContent = rawQuery ? "検索候補" : "キーワード";
+      head.appendChild(title);
+      group.appendChild(head);
+
+      const list = document.createElement("ul");
+      list.className = "search-suggest__chips";
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", title.textContent);
+
+      matchingCandidates.forEach((cand) => {
+        const li = document.createElement("li");
+        li.className = "search-suggest__chip-item";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = `searchSuggestOpt-${optionSeq}`;
+        optionSeq += 1;
+        btn.className = "search-suggest__chip";
+        btn.setAttribute("role", "option");
+        btn.setAttribute("aria-selected", "false");
+        btn.dataset.keyword = cand.keyword;
+        btn.textContent = cand.keyword;
+
+        btn.addEventListener("click", () => applySuggestion(cand.keyword));
+        visibleSuggestButtons.push(btn);
+
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+
+      group.appendChild(list);
+      suggestPanel.appendChild(group);
+    }
+
+    suggestOpen = true;
+    suggestPanel.hidden = false;
+    searchInput.setAttribute("aria-expanded", "true");
+    searchInput.removeAttribute("aria-activedescendant");
+  };
+
+  searchInput.addEventListener("focus", () => {
+    if (suppressNextFocusOpen) return;
+    renderSuggestPanel();
+  });
+  searchInput.addEventListener("click", () => {
+    renderSuggestPanel();
+  });
+
+  searchButton.addEventListener("click", () => {
+    closeSuggestPanel();
+    recordSearchHistory(searchInput.value.trim());
+    runSearch({ shouldScroll: true, step: 1 });
+  });
   searchInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
+    if (event.key === "ArrowDown" && !event.isComposing) {
       event.preventDefault();
+      if (!suggestOpen) {
+        renderSuggestPanel();
+      }
+      if (visibleSuggestButtons.length > 0) {
+        highlightedSuggestIndex =
+          highlightedSuggestIndex < visibleSuggestButtons.length - 1 ? highlightedSuggestIndex + 1 : 0;
+        syncSuggestHighlight();
+      }
+      return;
+    }
+    if (event.key === "ArrowUp" && !event.isComposing) {
+      if (!suggestOpen || visibleSuggestButtons.length === 0) return;
+      event.preventDefault();
+      highlightedSuggestIndex =
+        highlightedSuggestIndex > 0 ? highlightedSuggestIndex - 1 : visibleSuggestButtons.length - 1;
+      syncSuggestHighlight();
+      return;
+    }
+    if (event.key === "Escape" && suggestOpen) {
+      event.preventDefault();
+      closeSuggestPanel();
+      return;
+    }
+    if (event.key === "Enter" && !event.isComposing) {
+      event.preventDefault();
+      if (suggestOpen && highlightedSuggestIndex >= 0 && visibleSuggestButtons[highlightedSuggestIndex]) {
+        const kw = visibleSuggestButtons[highlightedSuggestIndex].dataset.keyword || "";
+        if (kw) {
+          applySuggestion(kw);
+          return;
+        }
+      }
+      closeSuggestPanel();
+      recordSearchHistory(searchInput.value.trim());
       runSearch({ shouldScroll: true, step: event.shiftKey ? -1 : 1 });
     }
   });
   searchInput.addEventListener("input", () => {
+    renderSuggestPanel();
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
     inputDebounceTimer = window.setTimeout(() => {
       runSearch({ shouldScroll: false });
     }, 180);
   });
 
+  document.addEventListener("click", (event) => {
+    if (!suggestOpen) return;
+    if (event.target instanceof Node && !searchBox.contains(event.target)) {
+      closeSuggestPanel();
+    }
+  });
+  document.addEventListener("focusin", (event) => {
+    if (!suggestOpen) return;
+    if (event.target instanceof Node && !searchBox.contains(event.target)) {
+      closeSuggestPanel();
+    }
+  });
+
   prevMatchButton?.addEventListener("click", () => stepLocalMatch(-1));
   nextMatchButton?.addEventListener("click", () => stepLocalMatch(1));
 
-  clearSearchButton.addEventListener("click", () => {
+  const resetSearch = ({ focusInput = false } = {}) => {
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
     searchInput.value = "";
     currentKeyword = "";
@@ -1969,8 +2445,16 @@ function wireSearch() {
     clearHighlights();
     renderResultList();
     updateSearchUi("");
-    searchInput.focus();
-  });
+    closeSuggestPanel();
+    if (focusInput) {
+      suppressNextFocusOpen = true;
+      searchInput.focus();
+      suppressNextFocusOpen = false;
+    }
+  };
+
+  clearSearchButton.addEventListener("click", () => resetSearch({ focusInput: true }));
+  searchCloseButton?.addEventListener("click", () => resetSearch({ focusInput: false }));
 
   searchResultsToggle?.addEventListener("click", () => {
     resultsOpen = !resultsOpen;
@@ -1984,6 +2468,7 @@ function wireSearch() {
     if (!(row instanceof HTMLElement)) return;
     const index = Number(row.dataset.matchIndex);
     if (!Number.isInteger(index) || !currentMatches[index]) return;
+    recordSearchHistory(currentKeyword);
     // 狭い画面では一覧が本文を覆うため、行を選んだら一覧を閉じてから移動する。
     if (narrowQuery.matches) {
       resultsOpen = false;
@@ -2229,7 +2714,7 @@ async function init() {
     wireTocToggle();
     wireBackToTocLinks();
     wireActiveHeadingTracker();
-    const movedToMatch = wireSearch();
+    const movedToMatch = wireSearch(glossaryItems);
     window.addEventListener("hashchange", scrollToLocationHash);
     if (!loadedFromFile) {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
