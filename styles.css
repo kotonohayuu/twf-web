@@ -1375,37 +1375,24 @@ body.error-page {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* 親ページの章の一覧 */
+/* 親ページの章の一覧（テープのカード） */
 .chapter-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   counter-reset: chapter;
 }
 
-/* 章の番号（テープのラベル風） */
-.chapter-list a::before {
-  counter-increment: chapter;
-  content: counter(chapter, decimal-leading-zero);
-  align-self: center;
-  flex-shrink: 0;
-  padding: 1px 7px;
-  border-bottom: 2px solid var(--bow);
-  background: var(--label);
-  color: #14161c;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
 .chapter-list a {
+  position: relative;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 9px 12px;
+  align-items: stretch;
+  gap: 12px;
+  height: 100%;
+  padding: 8px;
   border: 2px solid var(--line-light);
   border-right-color: var(--line-dark);
   border-bottom-color: var(--line-dark);
@@ -1416,8 +1403,27 @@ body.error-page {
   line-height: 1.5;
 }
 
+/* 章の番号（テープのラベル風。画像の左上に重ねる） */
+.chapter-list a::before {
+  counter-increment: chapter;
+  content: counter(chapter, decimal-leading-zero);
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 1px 7px;
+  border-bottom: 2px solid var(--bow);
+  background: var(--label);
+  color: #14161c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .chapter-list a::after {
   content: "→";
+  align-self: center;
   margin-left: auto;
   color: var(--bow-soft);
 }
@@ -1425,6 +1431,128 @@ body.error-page {
 .chapter-list a:hover {
   background: linear-gradient(180deg, #26304a 0%, #182033 100%);
   color: var(--accent);
+}
+
+.tape-card__thumb {
+  flex: 0 0 112px;
+  height: 84px;
+  overflow: hidden;
+  border: 1px solid var(--line-dark);
+  background: #000;
+}
+
+.tape-card__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+  filter: contrast(1.1) brightness(0.9);
+}
+
+/* 本文に画像のない章：ノイズの面 */
+.tape-card__thumb--empty {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.3 0 0 0 -0.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, #1a1d26 0 2px, #0c0e13 2px 4px);
+}
+
+.tape-card__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tape-card__title {
+  line-height: 1.45;
+}
+
+.tape-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1em;
+  color: #cfd3db;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+.tape-card__meta span {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .chapter-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 章ページ：読み進んだ位置の線（app.js が足す。狭い画面では現在地バーのすぐ下） */
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 45;
+  height: 3px;
+  background: var(--bow);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+@media (max-width: 960px) {
+  .read-progress {
+    top: var(--reading-bar-h);
+  }
+}
+
+/* 章ページを開いたとき：テープを切り替えたときのノイズを0.45秒だけ出す。
+   本文は下に見えたままで、操作も妨げない。動きを減らす設定の端末では出さない。 */
+@media (prefers-reduced-motion: no-preference) {
+  body.is-tape-start::before,
+  body.is-tape-start::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* 画面全体のノイズと走査線 */
+  body.is-tape-start::after {
+    top: 0;
+    bottom: 0;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -0.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 5px),
+      rgba(8, 10, 16, 0.55);
+    animation: tape-noise 0.45s steps(7, end) forwards;
+  }
+
+  /* 上から下へ流れる、明るい乱れの帯 */
+  body.is-tape-start::before {
+    top: 0;
+    height: 16vh;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.05) 55%, transparent);
+    animation: tape-band 0.45s linear forwards;
+  }
+}
+
+@keyframes tape-noise {
+  0% { opacity: 1; background-position: 0 0, 0 0, 0 0; }
+  40% { opacity: 0.8; background-position: 90px -130px, 0 3px, 0 0; }
+  75% { opacity: 0.4; background-position: -60px 70px, 0 1px, 0 0; }
+  100% { opacity: 0; background-position: 40px 20px, 0 0, 0 0; }
+}
+
+@keyframes tape-band {
+  0% { transform: translateY(-16vh); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
 /* 章ページの上部（サイト名と検索だけの小さいヘッダー） */

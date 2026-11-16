@@ -46,19 +46,21 @@ const IS_CHAPTER_PAGE = Boolean(PAGE_CHAPTER_SLUG);
 
 // 章ページの名前（URL）と、note.md の章の見出し（##）の書き出しの対応。
 // 章を増やすときは、ここに1行足し、同じ名前の HTML ファイル（例：file5.html）と sitemap.xml の行を足す。
+// released（公開日）・length（映像の長さ）・note は、親ページの章の一覧に出す。値は note.md の各章の冒頭に合わせる。
+// 隠し動画（Lucky You・Guilty）の公開日は、視聴できるようになった日。長さが note.md にない章は空にしている。
 const CHAPTERS = [
-  { slug: "file1", prefix: "ファイル1" },
-  { slug: "file2", prefix: "ファイル2" },
-  { slug: "lucky-you", prefix: "Lucky You" },
-  { slug: "file3", prefix: "ファイル3" },
-  { slug: "guilty", prefix: "Guilty" },
-  { slug: "souvenir", prefix: "souvenir" },
-  { slug: "spectacle", prefix: "Spectacle" },
-  { slug: "file4", prefix: "ファイル4" },
-  { slug: "felix", prefix: "フェリックス・クランケンの行動整理" }
+  { slug: "file1", prefix: "ファイル1", released: "2020/04/26", length: "11:05" },
+  { slug: "file2", prefix: "ファイル2", released: "2020/06/28", length: "17:55" },
+  { slug: "lucky-you", prefix: "Lucky You", released: "2020/06/28", length: "4:04" },
+  { slug: "file3", prefix: "ファイル3", released: "2021/03/19", length: "" },
+  { slug: "guilty", prefix: "Guilty", released: "2021/03/19", length: "7:04" },
+  { slug: "souvenir", prefix: "souvenir", released: "2023/09/13", length: "0:37" },
+  { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11", length: "4:11" },
+  { slug: "file4", prefix: "ファイル4", released: "2024/02/09", length: "" },
+  { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
-// note.md を章ごとに分けたもの。{ slug, title, root }。
+// note.md を章ごとに分けたもの。{ slug, title, root, def }。def は CHAPTERS の該当行。
 // root は、今のページの章なら markdownContainer、それ以外は画面に出さない入れ物（検索と転送に使う）。
 let chapterGroups = [];
 let currentChapter = null;
@@ -690,7 +692,7 @@ function splitIntoChapters(root) {
       if (!def) {
         console.warn(`note.md の章「${title}」に対応する章ページがありません（app.js の CHAPTERS）。`);
       }
-      group = { slug: def ? def.slug : "", title, root: document.createElement("div") };
+      group = { slug: def ? def.slug : "", title, root: document.createElement("div"), def: def || {} };
       groups.push(group);
     }
     if (group) group.root.appendChild(node);
@@ -725,7 +727,9 @@ function mountCurrentChapter({ useFirst = false } = {}) {
   }
 }
 
-// 親ページ：章の一覧。
+// 親ページ：章の一覧（テープのカード）。
+// 画像は、その章の本文の最初の画像。一覧用の小さい画像を images/cards/ に同じ名前で置く
+// （なければ本文の画像をそのまま使う）。本文に画像のない章は、ノイズの面を出す。
 function renderChapterIndex() {
   if (!chapterIndexList) return;
   chapterIndexList.textContent = "";
@@ -734,10 +738,75 @@ function renderChapterIndex() {
     const li = document.createElement("li");
     const link = document.createElement("a");
     link.href = chapterUrl(group);
-    link.textContent = group.title;
+    link.className = "tape-card";
+
+    const thumb = document.createElement("span");
+    thumb.className = "tape-card__thumb";
+    const firstImage = Array.from(group.root.querySelectorAll("img.wiki-image")).find(
+      (candidate) => !/\.svg$/i.test(candidate.getAttribute("src") || "")
+    );
+    if (firstImage) {
+      const original = (firstImage.getAttribute("src") || "").replace(/^\.\//, "/");
+      const img = document.createElement("img");
+      img.alt = "";
+      img.loading = "lazy";
+      img.addEventListener(
+        "error",
+        () => {
+          if (img.getAttribute("src") !== original) img.src = original;
+        },
+        { once: true }
+      );
+      img.src = original.replace(/^\/images\/([^/]+)\.[A-Za-z0-9]+$/, "/images/cards/$1.webp");
+      thumb.appendChild(img);
+    } else {
+      thumb.classList.add("tape-card__thumb--empty");
+    }
+
+    const body = document.createElement("span");
+    body.className = "tape-card__body";
+    const title = document.createElement("span");
+    title.className = "tape-card__title";
+    title.textContent = group.title;
+    const meta = document.createElement("span");
+    meta.className = "tape-card__meta";
+    const parts = [];
+    if (group.def.released) parts.push(`公開 ${group.def.released}`);
+    if (group.def.length) parts.push(`長さ ${group.def.length}`);
+    if (group.def.note) parts.push(group.def.note);
+    parts.forEach((text) => {
+      const part = document.createElement("span");
+      part.textContent = text;
+      meta.appendChild(part);
+    });
+    body.append(title, meta);
+
+    link.append(thumb, body);
     li.appendChild(link);
     chapterIndexList.appendChild(li);
   });
+}
+
+// 章ページ：開いたときに、テープを切り替えたときのノイズを一瞬だけ出す（表示は styles.css）。
+function playTapeStart() {
+  document.body.classList.add("is-tape-start");
+  window.setTimeout(() => document.body.classList.remove("is-tape-start"), 700);
+}
+
+// 章ページ：読み進んだ位置を示す線を、画面の上端に出す。
+function wireReadProgress() {
+  const progress = document.createElement("div");
+  progress.className = "read-progress";
+  progress.setAttribute("aria-hidden", "true");
+  document.body.appendChild(progress);
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+    progress.style.transform = `scaleX(${ratio})`;
+  };
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update, { passive: true });
+  update();
 }
 
 // 章ページの末尾：前後の章とトップへのリンク。
@@ -2714,6 +2783,10 @@ async function init() {
       mountCurrentChapter({ useFirst: !loadedFromFile });
     }
     if (loadedFromFile && redirectHashToChapter()) return;
+    if (IS_CHAPTER_PAGE) {
+      playTapeStart();
+      wireReadProgress();
+    }
     renderChapterIndex();
     buildToc();
     renderChapterNav();
