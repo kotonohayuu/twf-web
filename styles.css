@@ -704,19 +704,37 @@ button:active {
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
 }
 
+.search-toolbar__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .search-nav {
   display: inline-flex;
   gap: 6px;
   align-items: center;
 }
 
-.search-nav[hidden] {
+.search-nav[hidden],
+.search-toolbar__close[hidden] {
   display: none;
 }
 
-.search-nav button {
+.search-nav button,
+.search-toolbar__close {
   padding: 5px 10px;
   font-size: 0.86rem;
+}
+
+.search-toolbar__close {
+  min-width: 32px;
+  color: var(--muted);
+}
+
+.search-toolbar__close:hover {
+  color: var(--danger);
 }
 
 /* 検索結果の一覧（件数表示と「前へ／次へ」の下に出す） */

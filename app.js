@@ -1970,11 +1970,35 @@ function wireSearch(glossaryItems = []) {
     applyResultsOpen();
   };
 
+  let searchCloseButton = null;
+  if (searchToolbar) {
+    const controls = document.createElement("div");
+    controls.className = "search-toolbar__controls";
+    if (searchNav) {
+      searchToolbar.insertBefore(controls, searchNav);
+      controls.appendChild(searchNav);
+    } else if (searchResults) {
+      searchToolbar.insertBefore(controls, searchResults);
+    } else {
+      searchToolbar.appendChild(controls);
+    }
+    searchCloseButton = document.createElement("button");
+    searchCloseButton.id = "searchCloseButton";
+    searchCloseButton.type = "button";
+    searchCloseButton.className = "search-toolbar__close";
+    searchCloseButton.setAttribute("aria-label", "検索を閉じて入力欄も消す");
+    searchCloseButton.title = "検索を閉じる";
+    searchCloseButton.textContent = "×";
+    searchCloseButton.hidden = true;
+    controls.appendChild(searchCloseButton);
+  }
+
   const updateSearchUi = (keyword) => {
     if (!keyword) {
       summaryStatus.textContent = "";
       summaryStatus.classList.remove("error");
       if (searchNav) searchNav.hidden = true;
+      if (searchCloseButton) searchCloseButton.hidden = true;
       if (searchToolbar) searchToolbar.classList.remove("is-active");
       return;
     }
@@ -1984,6 +2008,7 @@ function wireSearch(glossaryItems = []) {
       summaryStatus.textContent = `「${keyword}」の一致: 0件`;
       summaryStatus.classList.add("error");
       if (searchNav) searchNav.hidden = true;
+      if (searchCloseButton) searchCloseButton.hidden = false;
       if (searchToolbar) searchToolbar.classList.add("is-active");
       return;
     }
@@ -2005,6 +2030,7 @@ function wireSearch(glossaryItems = []) {
     summaryStatus.textContent = `「${keyword}」の一致: ${countLabel}${inClosedFold ? "（畳まれた箇所の中）" : ""}`;
     summaryStatus.classList.remove("error");
     if (searchNav) searchNav.hidden = local.length === 0;
+    if (searchCloseButton) searchCloseButton.hidden = false;
     if (searchToolbar) searchToolbar.classList.add("is-active");
   };
 
@@ -2434,7 +2460,7 @@ function wireSearch(glossaryItems = []) {
   prevMatchButton?.addEventListener("click", () => stepLocalMatch(-1));
   nextMatchButton?.addEventListener("click", () => stepLocalMatch(1));
 
-  clearSearchButton.addEventListener("click", () => {
+  const resetSearch = ({ focusInput = false } = {}) => {
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
     searchInput.value = "";
     currentKeyword = "";
@@ -2444,10 +2470,15 @@ function wireSearch(glossaryItems = []) {
     renderResultList();
     updateSearchUi("");
     closeSuggestPanel();
-    suppressNextFocusOpen = true;
-    searchInput.focus();
-    suppressNextFocusOpen = false;
-  });
+    if (focusInput) {
+      suppressNextFocusOpen = true;
+      searchInput.focus();
+      suppressNextFocusOpen = false;
+    }
+  };
+
+  clearSearchButton.addEventListener("click", () => resetSearch({ focusInput: true }));
+  searchCloseButton?.addEventListener("click", () => resetSearch({ focusInput: false }));
 
   searchResultsToggle?.addEventListener("click", () => {
     resultsOpen = !resultsOpen;
