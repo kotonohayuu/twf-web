@@ -1507,6 +1507,11 @@ body.error-page {
   .read-progress {
     top: var(--reading-bar-h);
   }
+
+  /* 目次の引き出しを開いている間は、進捗の線が引き出しの上に重ならないよう隠す */
+  .reading-bar:has(.reading-bar__drawer:not([hidden])) ~ .read-progress {
+    display: none;
+  }
 }
 
 /* 章ページを開いたとき：テープを切り替えたときのノイズを0.45秒だけ出す。
@@ -1592,13 +1597,17 @@ body.error-page {
   white-space: pre;
 }
 
-/* 狭い画面の現在地バー：題名の前の赤い点 */
+/* 狭い画面の現在地バー：題名の前の赤い点（年の札が出ているときは省く） */
 .reading-bar__title::before {
   content: "●";
   margin-right: 6px;
   color: var(--bow);
   font-size: 0.7em;
   vertical-align: 0.15em;
+}
+
+.year-tag:not([hidden]) + .reading-bar__title::before {
+  content: none;
 }
 
 /* 章ページの目次：トップへのリンクと、ほかの章へのリンク */
