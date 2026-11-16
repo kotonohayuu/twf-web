@@ -714,6 +714,15 @@ function mountCurrentChapter({ useFirst = false } = {}) {
     markdownContainer.appendChild(currentChapter.root.firstChild);
   }
   currentChapter.root = markdownContainer;
+
+  // 章の題名の上に出す番号（「02 / 09」。表示は styles.css の h2[data-tape-label]）。
+  const linked = chapterGroups.filter((group) => group.slug);
+  const position = linked.indexOf(currentChapter);
+  const chapterHeading = markdownContainer.querySelector("h2");
+  if (chapterHeading && position >= 0) {
+    const pad = (value) => String(value).padStart(2, "0");
+    chapterHeading.dataset.tapeLabel = `${pad(position + 1)} / ${pad(linked.length)}`;
+  }
 }
 
 // 親ページ：章の一覧。

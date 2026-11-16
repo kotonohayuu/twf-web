@@ -12,6 +12,9 @@
   --line-dark: #05070b;
   --titlebar: #173f8f;
   --danger: #fca5a5;
+  --bow: #e8241a; /* 差し色：ボンの蝶ネクタイの赤 */
+  --bow-soft: #ff7a70; /* 暗い地の上で文字に使う明るめの赤 */
+  --label: #e9e2cf; /* テープのラベルの紙の色 */
   --reading-width: 36.5rem;
   --reading-bar-h: 42px;
 }
@@ -48,17 +51,19 @@ a {
   display: none;
 }
 
+/* 年の札：ビデオの画面に焼き込まれた日付のように見せる */
 .year-tag {
   display: inline-block;
   padding: 0 5px;
   margin-right: 6px;
-  border: 1px solid var(--line-light);
-  border-radius: 2px;
-  background: #0b1220;
-  color: var(--accent-2);
+  background: #000;
+  color: #f4f4f4;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   line-height: 1.45;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.45);
   vertical-align: baseline;
   flex-shrink: 0;
 }
@@ -66,7 +71,7 @@ a {
 .hero {
   border-bottom: 2px solid var(--line-dark);
   background:
-    linear-gradient(180deg, #1f5dc4 0 28px, #102039 28px 100%);
+    linear-gradient(180deg, #1f5dc4 0 28px, var(--bow) 28px 30px, #102039 30px 100%);
   box-shadow: inset 0 1px 0 #77a6ff, inset 0 -1px 0 var(--line-light);
 }
 
@@ -488,7 +493,7 @@ button:active {
 #tocList a.is-current,
 .toc-list a.is-current {
   border-color: rgba(104, 215, 255, 0.45);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--bow);
   background: #10203a;
   color: var(--accent);
   font-weight: 600;
@@ -1045,12 +1050,12 @@ button:active {
 
 /* 重要な点用（紫系） */
 .callout-secret {
-  border-left-color: #c084fc;
-  background: rgba(192, 132, 252, 0.08);
+  border-left-color: var(--bow);
+  background: rgba(232, 36, 26, 0.08);
 }
 
 .callout-secret strong:first-child {
-  color: #c084fc;
+  color: var(--bow-soft);
   display: block;
   margin-bottom: 4px;
   font-size: 1.05em;
@@ -1377,6 +1382,23 @@ body.error-page {
   padding: 0;
   display: grid;
   gap: 8px;
+  counter-reset: chapter;
+}
+
+/* 章の番号（テープのラベル風） */
+.chapter-list a::before {
+  counter-increment: chapter;
+  content: counter(chapter, decimal-leading-zero);
+  align-self: center;
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-bottom: 2px solid var(--bow);
+  background: var(--label);
+  color: #14161c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .chapter-list a {
@@ -1397,7 +1419,7 @@ body.error-page {
 .chapter-list a::after {
   content: "→";
   margin-left: auto;
-  color: var(--accent);
+  color: var(--bow-soft);
 }
 
 .chapter-list a:hover {
@@ -1426,6 +1448,29 @@ body.error-page {
 .hero__site a:hover {
   color: var(--accent);
   text-decoration: underline;
+}
+
+/* 章ページの題名：再生中の表示と章の番号（番号は app.js が data-tape-label に入れる） */
+.page-chapter .markdown-body > h2[data-tape-label]::before {
+  content: "▶ PLAY   " attr(data-tape-label);
+  display: block;
+  margin-bottom: 2px;
+  color: #f4f4f4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.45);
+  white-space: pre;
+}
+
+/* 狭い画面の現在地バー：題名の前の赤い点 */
+.reading-bar__title::before {
+  content: "●";
+  margin-right: 6px;
+  color: var(--bow);
+  font-size: 0.7em;
+  vertical-align: 0.15em;
 }
 
 /* 章ページの目次：トップへのリンクと、ほかの章へのリンク */
