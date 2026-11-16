@@ -2286,14 +2286,6 @@ function wireSearch(glossaryItems = []) {
         label.textContent = kw;
         btn.appendChild(label);
 
-        const count = countKeywordInCorpus(searchCorpus, kw);
-        if (count > 0) {
-          const countEl = document.createElement("span");
-          countEl.className = "search-suggest__count";
-          countEl.textContent = `${count}件`;
-          btn.appendChild(countEl);
-        }
-
         btn.addEventListener("click", () => applySuggestion(kw));
         visibleSuggestButtons.push(btn);
 
@@ -2327,44 +2319,28 @@ function wireSearch(glossaryItems = []) {
       head.className = "search-suggest__head";
       const title = document.createElement("span");
       title.className = "search-suggest__title";
-      title.textContent = rawQuery ? "検索候補" : "よく検索されるキーワード";
+      title.textContent = rawQuery ? "検索候補" : "キーワード";
       head.appendChild(title);
       group.appendChild(head);
 
       const list = document.createElement("ul");
-      list.className = "search-suggest__list";
+      list.className = "search-suggest__chips";
       list.setAttribute("role", "listbox");
       list.setAttribute("aria-label", title.textContent);
 
       matchingCandidates.forEach((cand) => {
         const li = document.createElement("li");
-        li.className = "search-suggest__row";
+        li.className = "search-suggest__chip-item";
 
         const btn = document.createElement("button");
         btn.type = "button";
         btn.id = `searchSuggestOpt-${optionSeq}`;
         optionSeq += 1;
-        btn.className = "search-suggest__btn";
+        btn.className = "search-suggest__chip";
         btn.setAttribute("role", "option");
         btn.setAttribute("aria-selected", "false");
         btn.dataset.keyword = cand.keyword;
-
-        const label = document.createElement("span");
-        label.className = "search-suggest__keyword";
-        label.textContent = cand.keyword;
-        btn.appendChild(label);
-
-        if (cand.meta) {
-          const meta = document.createElement("span");
-          meta.className = "search-suggest__meta";
-          meta.textContent = cand.meta;
-          btn.appendChild(meta);
-        }
-
-        const countEl = document.createElement("span");
-        countEl.className = "search-suggest__count";
-        countEl.textContent = `${cand.count}件`;
-        btn.appendChild(countEl);
+        btn.textContent = cand.keyword;
 
         btn.addEventListener("click", () => applySuggestion(cand.keyword));
         visibleSuggestButtons.push(btn);
