@@ -147,15 +147,6 @@ h1 {
   max-width: 840px;
 }
 
-/* ネタバレの注意（紹介文のすぐ下に、控えめに置く） */
-.hero__note {
-  margin: -12px 0 22px;
-  padding-left: 8px;
-  border-left: 2px solid var(--line-light);
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
 .hero__actions {
   display: flex;
   gap: 10px;
