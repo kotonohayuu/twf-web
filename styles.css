@@ -521,16 +521,6 @@ button:active {
   text-shadow: 1px 1px 0 #000;
 }
 
-.quick-guide__overview {
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border-left: 3px solid var(--accent);
-  background: rgba(104, 215, 255, 0.06);
-  color: var(--text);
-  max-width: var(--reading-width);
-  line-height: 1.75;
-}
-
 .guide-grid {
   display: grid;
   gap: 10px;

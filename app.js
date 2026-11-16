@@ -73,7 +73,6 @@ function chapterUrl(group) {
 let onSpoilerFoldsChanged = () => {};
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
-const GUIDE_SPOILER_STORAGE_KEY = "twf_guide_spoiler";
 const TIMELINE_SPOILER_STORAGE_KEY = "twf_timeline_spoiler";
 const FORWARD_SPOILER_STORAGE_KEY = "twf_forward_spoilers";
 const SEARCH_HISTORY_STORAGE_KEY = "twf_search_history";
@@ -2629,7 +2628,7 @@ function wireSearch(glossaryItems = []) {
   return false;
 }
 
-// クイックガイドと主要年表のネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
+// 主要年表のネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
 function wireRememberedDetails(elementId, storageKey) {
   const details = document.getElementById(elementId);
   if (!(details instanceof HTMLDetailsElement)) return;
@@ -2642,7 +2641,6 @@ function wireRememberedDetails(elementId, storageKey) {
 }
 
 function wireGuideSpoiler() {
-  wireRememberedDetails("guideSpoiler", GUIDE_SPOILER_STORAGE_KEY);
   wireRememberedDetails("timelineSpoiler", TIMELINE_SPOILER_STORAGE_KEY);
 }
 
