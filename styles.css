@@ -319,6 +319,7 @@ button:active {
 
 .quick-guide,
 .timeline,
+.chapter-index,
 .markdown-body {
   border: 2px solid var(--line-light);
   border-right-color: var(--line-dark);
@@ -331,6 +332,7 @@ button:active {
 
 .quick-guide h2,
 .timeline h2,
+.chapter-index h2,
 .markdown-body h2 {
   margin-top: 0;
   padding: 4px 8px;
@@ -1161,9 +1163,156 @@ body.error-page {
   margin: 0;
 }
 
+/* 親ページ（トップ）：目次の欄を置かず、1段で並べる */
+.layout--single {
+  max-width: 900px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* 親ページの章の一覧 */
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.chapter-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #1c2333 0%, #121722 100%);
+  color: var(--text);
+  text-decoration: none;
+  line-height: 1.5;
+}
+
+.chapter-list a::after {
+  content: "→";
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.chapter-list a:hover {
+  background: linear-gradient(180deg, #26304a 0%, #182033 100%);
+  color: var(--accent);
+}
+
+/* 章ページの上部（サイト名と検索だけの小さいヘッダー） */
+.hero--compact .hero__content {
+  padding: 40px 20px 20px;
+}
+
+.hero__site {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.hero__site a {
+  color: #f7fbff;
+  text-decoration: none;
+}
+
+.hero__site a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* 章ページの目次：トップへのリンクと、ほかの章へのリンク */
+#tocList .toc-home-link,
+.toc-list .toc-home-link {
+  margin-bottom: 4px;
+  padding-bottom: 7px;
+  border-bottom: 1px dotted var(--line-light);
+  color: var(--accent-2);
+  font-size: 0.88rem;
+}
+
+#tocList .toc-chapter-link,
+.toc-list .toc-chapter-link {
+  color: var(--muted);
+}
+
+/* 章ページの末尾：前後の章とトップへのリンク */
+.chapter-nav {
+  display: grid;
+  gap: 12px;
+}
+
+.chapter-nav__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chapter-nav__link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  line-height: 1.5;
+}
+
+.chapter-nav__link:hover {
+  background: #1a2132;
+  color: var(--accent);
+}
+
+.chapter-nav__link--next {
+  grid-column: 2;
+  text-align: right;
+}
+
+.chapter-nav__label {
+  color: var(--accent);
+  font-size: 0.86rem;
+}
+
+.chapter-nav__home {
+  justify-self: center;
+  font-size: 0.92rem;
+}
+
+/* 検索結果の一覧：ほかの章の行に添える札 */
+.search-results__jump {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 5px;
+  border: 1px solid var(--line-light);
+  border-radius: 2px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 960px) {
   body {
     padding-top: var(--reading-bar-h);
+  }
+
+  /* 親ページには現在地バーがないので、上の余白を取らない */
+  body.page-home {
+    padding-top: 0;
+  }
+
+  .page-home .search-toolbar.is-active {
+    top: 10px;
   }
 
   .reading-bar {
@@ -1261,6 +1410,18 @@ body.error-page {
     gap: 18px;
   }
 
+  .hero--compact .hero__content {
+    padding: 36px 14px 18px;
+  }
+
+  .chapter-nav__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chapter-nav__link--next {
+    grid-column: auto;
+  }
+
   .hero__actions {
     flex-direction: column;
   }
@@ -1275,6 +1436,7 @@ body.error-page {
 
   .quick-guide,
   .timeline,
+  .chapter-index,
   .markdown-body,
   .sidebar {
     padding: 14px;

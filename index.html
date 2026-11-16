@@ -22,28 +22,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body id="top">
-    <div id="readingBar" class="reading-bar" role="region" aria-label="現在地">
-      <div class="reading-bar__bar">
-        <div class="reading-bar__current">
-          <span id="readingBarYear" class="year-tag" hidden></span>
-          <span id="readingBarTitle" class="reading-bar__title">目次・案内</span>
-        </div>
-        <button
-          id="readingBarToggle"
-          class="reading-bar__toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="readingBarDrawer"
-        >
-          目次
-        </button>
-      </div>
-      <nav id="readingBarDrawer" class="reading-bar__drawer" aria-label="モバイル目次" hidden>
-        <ul id="readingBarTocList" class="toc-list"></ul>
-      </nav>
-    </div>
-
+  <body id="top" class="page-home">
     <header class="hero">
       <div class="hero__content">
         <div class="hero__text">
@@ -69,26 +48,29 @@
       </div>
     </header>
 
-    <main class="layout">
-      <aside id="tocSidebar" class="sidebar" aria-label="目次">
-        <div class="sidebar__header">
-          <h2>目次</h2>
-          <button
-            id="tocToggleButton"
-            class="sidebar__toggle"
-            type="button"
-            aria-expanded="false"
-            aria-controls="tocNav"
-          >
-            目次を開く
-          </button>
-        </div>
-        <nav id="tocNav">
-          <ul id="tocList"></ul>
-        </nav>
-      </aside>
-
+    <main class="layout layout--single">
       <section class="content">
+        <div id="searchToolbar" class="search-toolbar">
+          <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
+          <div id="searchNav" class="search-nav" hidden>
+            <button id="prevMatchButton" type="button" aria-label="前の一致箇所へ">↑ 前へ</button>
+            <button id="nextMatchButton" type="button" aria-label="次の一致箇所へ">↓ 次へ</button>
+          </div>
+          <div id="searchResults" class="search-results" hidden>
+            <button
+              id="searchResultsToggle"
+              class="search-results__toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="searchResultsList"
+            >
+              一致箇所の一覧を開く
+            </button>
+            <ol id="searchResultsList" class="search-results__list" aria-label="一致箇所の一覧" hidden></ol>
+            <p id="searchResultsNote" class="search-results__note" hidden></p>
+          </div>
+        </div>
+
         <section class="quick-guide">
           <h2>クイックガイド</h2>
           <div class="guide-grid">
@@ -171,16 +153,16 @@
                 <h3>重要舞台</h3>
                 <ul class="guide-list">
                   <li>
-                    <a href="#f4-08"><strong>Bon's Burgers</strong></a>：1974年6月28日に開店し、舞台裏でスーザンが襲われ、ローズマリーが殺害されて7月20日に閉業したレストラン。
+                    <a href="/file4#f4-08"><strong>Bon's Burgers</strong></a>：1974年6月28日に開店し、舞台裏でスーザンが襲われ、ローズマリーが殺害されて7月20日に閉業したレストラン。
                   </li>
                   <li>
-                    <a href="#f2-t4"><strong>K-9保管施設</strong></a>：閉店後の機体が隔離された森の地下施設。1978年にアシュリー、1982年にブライアンが殺害された。
+                    <a href="/file2#f2-t4"><strong>K-9保管施設</strong></a>：閉店後の機体が隔離された森の地下施設。1978年にアシュリー、1982年にブライアンが殺害された。
                   </li>
                   <li>
-                    <a href="#f3-scenes"><strong>BunnyFarm（ゲーム筐体）</strong></a>：1982年にホテル地下室でソフィーがプレイし、1974年の事件と家族の記憶を呼び覚ました業務用ゲーム。
+                    <a href="/file3#f3-scenes"><strong>BunnyFarm（ゲーム筐体）</strong></a>：1982年にホテル地下室でソフィーがプレイし、1974年の事件と家族の記憶を呼び覚ました業務用ゲーム。
                   </li>
                   <li>
-                    <a href="#f4-12"><strong>Wonderland</strong></a>：真っ白な空間として描かれる霊的領域。「Bon（灰色の存在）」が死後の魂を器へ誘導する場である。
+                    <a href="/file4#f4-12"><strong>Wonderland</strong></a>：真っ白な空間として描かれる霊的領域。「Bon（灰色の存在）」が死後の魂を器へ誘導する場である。
                   </li>
                 </ul>
               </article>
@@ -188,13 +170,13 @@
                 <h3>よく出るキー語</h3>
                 <ul class="guide-list">
                   <li>
-                    <strong>「きれいにする（make them beautiful）」</strong>（<a href="#f2-t3">ファイル2・テープ3</a>／<a href="#f2-t4">テープ4</a>）：ボンが犠牲者を解体してアニマトロニクスへ詰め込む行為を指す言葉。
+                    <strong>「きれいにする（make them beautiful）」</strong>（<a href="/file2#f2-t3">ファイル2・テープ3</a>／<a href="/file2#f2-t4">テープ4</a>）：ボンが犠牲者を解体してアニマトロニクスへ詰め込む行為を指す言葉。
                   </li>
                   <li>
-                    <strong>「Safety in pills, Sophie」</strong>（<a href="#ly-voice">Lucky You・語りパート</a>）：記憶喪失の薬を飲むソフィーに対し、「薬の中に安全がある」と繰り返される音声。
+                    <strong>「Safety in pills, Sophie」</strong>（<a href="/lucky-you#ly-voice">Lucky You・語りパート</a>）：記憶喪失の薬を飲むソフィーに対し、「薬の中に安全がある」と繰り返される音声。
                   </li>
                   <li>
-                    <strong>「I'm still here」</strong>（<a href="#spectacle-content">Spectacle・映像の内容</a>）：閉鎖された店舗の報道映像の終盤、ローズマリーの顔と共に画面を埋め尽くす言葉。
+                    <strong>「I'm still here」</strong>（<a href="/spectacle#spectacle-content">Spectacle・映像の内容</a>）：閉鎖された店舗の報道映像の終盤、ローズマリーの顔と共に画面を埋め尽くす言葉。
                   </li>
                 </ul>
               </article>
@@ -223,52 +205,9 @@
           </details>
         </section>
 
-        <section aria-label="本文">
-          <div class="article-controls" aria-label="表示の切り替えと区分">
-            <div class="sec-legend" aria-label="節の区分">
-              <span class="sec-badge sec-badge--event">映像で起きたこと</span>
-              <span class="sec-badge sec-badge--analysis">読み（考察・仮説）</span>
-              <span class="sec-badge sec-badge--fact">確定事実</span>
-              <span class="sec-badge sec-badge--supplement">補足・整理</span>
-            </div>
-            <button
-              id="foldEventsToggle"
-              class="fold-toggle"
-              type="button"
-              aria-pressed="false"
-            >
-              「映像で起きたこと」を畳む
-            </button>
-            <button
-              id="spoilerFoldsToggle"
-              class="fold-toggle"
-              type="button"
-              aria-pressed="false"
-            >
-              先の内容に触れる箇所をすべて開く
-            </button>
-          </div>
-          <div id="searchToolbar" class="search-toolbar">
-            <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
-            <div id="searchNav" class="search-nav" hidden>
-              <button id="prevMatchButton" type="button" aria-label="前の一致箇所へ">↑ 前へ</button>
-              <button id="nextMatchButton" type="button" aria-label="次の一致箇所へ">↓ 次へ</button>
-            </div>
-            <div id="searchResults" class="search-results" hidden>
-              <button
-                id="searchResultsToggle"
-                class="search-results__toggle"
-                type="button"
-                aria-expanded="false"
-                aria-controls="searchResultsList"
-              >
-                一致箇所の一覧を開く
-              </button>
-              <ol id="searchResultsList" class="search-results__list" aria-label="一致箇所の一覧" hidden></ol>
-              <p id="searchResultsNote" class="search-results__note" hidden></p>
-            </div>
-          </div>
-          <article id="markdownContainer" class="markdown-body"></article>
+        <section class="chapter-index" aria-labelledby="chapterIndexTitle">
+          <h2 id="chapterIndexTitle">章の一覧</h2>
+          <ol id="chapterList" class="chapter-list"></ol>
         </section>
       </section>
     </main>

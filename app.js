@@ -37,6 +37,38 @@ const searchResultsList = document.getElementById("searchResultsList");
 const searchResultsNote = document.getElementById("searchResultsNote");
 const foldEventsToggle = document.getElementById("foldEventsToggle");
 const spoilerFoldsToggle = document.getElementById("spoilerFoldsToggle");
+const chapterIndexList = document.getElementById("chapterList");
+const chapterNav = document.getElementById("chapterNav");
+
+// 章ページ（file2.html など）は <body data-chapter="file2"> を持つ。親ページ（index.html）は持たない。
+const PAGE_CHAPTER_SLUG = document.body?.dataset.chapter || "";
+const IS_CHAPTER_PAGE = Boolean(PAGE_CHAPTER_SLUG);
+
+// 章ページの名前（URL）と、note.md の章の見出し（##）の書き出しの対応。
+// 章を増やすときは、ここに1行足し、同じ名前の HTML ファイル（例：file5.html）と sitemap.xml の行を足す。
+const CHAPTERS = [
+  { slug: "file1", prefix: "ファイル1" },
+  { slug: "file2", prefix: "ファイル2" },
+  { slug: "lucky-you", prefix: "Lucky You" },
+  { slug: "file3", prefix: "ファイル3" },
+  { slug: "guilty", prefix: "Guilty" },
+  { slug: "souvenir", prefix: "souvenir" },
+  { slug: "spectacle", prefix: "Spectacle" },
+  { slug: "file4", prefix: "ファイル4" },
+  { slug: "felix", prefix: "フェリックス・クランケンの行動整理" }
+];
+
+// note.md を章ごとに分けたもの。{ slug, title, root }。
+// root は、今のページの章なら markdownContainer、それ以外は画面に出さない入れ物（検索と転送に使う）。
+let chapterGroups = [];
+let currentChapter = null;
+
+function chapterUrl(group) {
+  return `/${group.slug}`;
+}
+
+// 「先の内容に触れる箇所」をまとめて開閉したあとに呼ぶ（検索の一覧を合わせ直す。wireSearch が差し替える）。
+let onSpoilerFoldsChanged = () => {};
 
 const FOLD_STORAGE_KEY = "twf_fold_events";
 const GUIDE_SPOILER_STORAGE_KEY = "twf_guide_spoiler";
@@ -494,7 +526,7 @@ function sanitizeGeneratedHtml(html) {
   return template.innerHTML;
 }
 
-function assignFile4AnchorIds() {
+function assignFile4AnchorIds(root) {
   const headingMap = {
     "①": "f4-01",
     "②": "f4-02",
@@ -510,7 +542,7 @@ function assignFile4AnchorIds() {
     "⑫": "f4-12"
   };
 
-  const allHeadings = Array.from(markdownContainer.querySelectorAll("h2, h3"));
+  const allHeadings = Array.from(root.querySelectorAll("h2, h3"));
   const file4Index = allHeadings.findIndex(
     (heading) => heading.tagName === "H2" && heading.textContent?.trim().startsWith("ファイル4 — CyberFun Tech")
   );
@@ -546,10 +578,10 @@ function extractHeadingYear(text) {
   return match[1];
 }
 
-function prepareHeadingMetadata() {
-  if (!markdownContainer) return;
-  assignFile4AnchorIds();
-  const headings = markdownContainer.querySelectorAll("h2, h3");
+function prepareHeadingMetadata(root) {
+  if (!root) return;
+  assignFile4AnchorIds(root);
+  const headings = root.querySelectorAll("h2, h3");
   let autoIdCounter = 1;
 
   headings.forEach((heading) => {
@@ -594,27 +626,162 @@ function createTocItemElement(heading) {
   return li;
 }
 
+// 目次の、ほかの章のページへのリンク（見出しは今のページにないので、章の名前だけを出す）。
+function createChapterLinkItem(group) {
+  const li = document.createElement("li");
+  const link = document.createElement("a");
+  link.href = chapterUrl(group);
+  link.dataset.level = "2";
+  link.className = "toc-chapter-link";
+  const titleSpan = document.createElement("span");
+  titleSpan.textContent = group.title;
+  link.appendChild(titleSpan);
+  li.appendChild(link);
+  return li;
+}
+
+function createTocHomeItem() {
+  const li = document.createElement("li");
+  const link = document.createElement("a");
+  link.href = "/";
+  link.className = "toc-home-link";
+  link.textContent = "トップ（クイックガイド・主要年表）";
+  li.appendChild(link);
+  return li;
+}
+
+// 章ページの目次：トップへのリンクと全章の一覧。今の章だけは節（###）まで出す。
+function buildTocItems() {
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(createTocHomeItem());
+  chapterGroups.forEach((group) => {
+    if (group === currentChapter && markdownContainer) {
+      markdownContainer.querySelectorAll("h2, h3").forEach((heading) => {
+        fragment.appendChild(createTocItemElement(heading));
+      });
+    } else if (group.slug) {
+      fragment.appendChild(createChapterLinkItem(group));
+    }
+  });
+  return fragment;
+}
+
 function buildToc() {
   if (!tocList || !markdownContainer) return;
   tocList.innerHTML = "";
-  if (readingBarTocList) readingBarTocList.innerHTML = "";
-  prepareHeadingMetadata();
-
-  const headings = markdownContainer.querySelectorAll("h2, h3");
-  const desktopFragment = document.createDocumentFragment();
-  const mobileFragment = document.createDocumentFragment();
-
-  headings.forEach((heading) => {
-    desktopFragment.appendChild(createTocItemElement(heading));
-    if (readingBarTocList) {
-      mobileFragment.appendChild(createTocItemElement(heading));
-    }
-  });
-
-  tocList.appendChild(desktopFragment);
+  tocList.appendChild(buildTocItems());
   if (readingBarTocList) {
-    readingBarTocList.appendChild(mobileFragment);
+    readingBarTocList.innerHTML = "";
+    readingBarTocList.appendChild(buildTocItems());
   }
+}
+
+// note.md を組み立てた入れ物を、章（## 見出し）ごとに分ける。
+function splitIntoChapters(root) {
+  const groups = [];
+  let group = null;
+  Array.from(root.childNodes).forEach((node) => {
+    if (node instanceof Element && node.tagName === "H2") {
+      const title = node.dataset.cleanTitle || node.textContent?.trim() || "";
+      const def = CHAPTERS.find((candidate) => title.startsWith(candidate.prefix));
+      if (!def) {
+        console.warn(`note.md の章「${title}」に対応する章ページがありません（app.js の CHAPTERS）。`);
+      }
+      group = { slug: def ? def.slug : "", title, root: document.createElement("div") };
+      groups.push(group);
+    }
+    if (group) group.root.appendChild(node);
+  });
+  return groups;
+}
+
+// 章ページ：その章を本文の欄に入れる。ほかの章は画面に出さずに持っておく（検索と転送に使う）。
+// useFirst … note.md を読めなかったときに、案内文（最初の章として組み立てたもの）を出すために使う。
+function mountCurrentChapter({ useFirst = false } = {}) {
+  if (!markdownContainer) return;
+  currentChapter =
+    (useFirst ? chapterGroups[0] : chapterGroups.find((group) => group.slug === PAGE_CHAPTER_SLUG)) || null;
+  markdownContainer.textContent = "";
+  if (!currentChapter) {
+    markdownContainer.innerHTML =
+      '<h2>この章は見つかりませんでした</h2><p><a href="/">トップ（クイックガイド・主要年表・章の一覧）へ戻る</a></p>';
+    return;
+  }
+  while (currentChapter.root.firstChild) {
+    markdownContainer.appendChild(currentChapter.root.firstChild);
+  }
+  currentChapter.root = markdownContainer;
+}
+
+// 親ページ：章の一覧。
+function renderChapterIndex() {
+  if (!chapterIndexList) return;
+  chapterIndexList.textContent = "";
+  chapterGroups.forEach((group) => {
+    if (!group.slug) return;
+    const li = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = chapterUrl(group);
+    link.textContent = group.title;
+    li.appendChild(link);
+    chapterIndexList.appendChild(li);
+  });
+}
+
+// 章ページの末尾：前後の章とトップへのリンク。
+function renderChapterNav() {
+  if (!chapterNav) return;
+  chapterNav.textContent = "";
+  const linked = chapterGroups.filter((group) => group.slug);
+  const index = currentChapter ? linked.indexOf(currentChapter) : -1;
+
+  const makeLink = (group, direction) => {
+    const link = document.createElement("a");
+    link.href = chapterUrl(group);
+    link.className = `chapter-nav__link chapter-nav__link--${direction}`;
+    link.rel = direction;
+    const label = document.createElement("span");
+    label.className = "chapter-nav__label";
+    label.textContent = direction === "prev" ? "← 前の章" : "次の章 →";
+    const title = document.createElement("span");
+    title.className = "chapter-nav__title";
+    title.textContent = group.title;
+    link.append(label, title);
+    return link;
+  };
+
+  const row = document.createElement("div");
+  row.className = "chapter-nav__row";
+  if (index > 0) row.appendChild(makeLink(linked[index - 1], "prev"));
+  if (index >= 0 && index < linked.length - 1) row.appendChild(makeLink(linked[index + 1], "next"));
+  if (row.childElementCount > 0) chapterNav.appendChild(row);
+
+  const home = document.createElement("a");
+  home.href = "/";
+  home.className = "chapter-nav__home";
+  home.textContent = "トップ（クイックガイド・主要年表・章の一覧）へ";
+  chapterNav.appendChild(home);
+}
+
+// URL の #見出し が、今のページになく、ほかの章にあるなら、その章のページへ移る。
+// 1ページだった頃のリンク（/#f2-t3 など）も、これで該当する章へ届く。
+function redirectHashToChapter() {
+  const rawHash = window.location.hash;
+  if (!rawHash || rawHash.length <= 1) return false;
+  let targetId = "";
+  try {
+    targetId = decodeURIComponent(rawHash.slice(1));
+  } catch (_error) {
+    return false;
+  }
+  if (document.getElementById(targetId)) return false;
+  const selector = `[id="${CSS.escape(targetId)}"]`;
+  const owner = chapterGroups.find(
+    (group) => group.slug && group !== currentChapter && group.root.querySelector(selector)
+  );
+  if (!owner) return false;
+  window.location.replace(`${chapterUrl(owner)}${rawHash}`);
+  return true;
 }
 
 function setSectionCollapsed(sectionEl, collapsed) {
@@ -650,9 +817,9 @@ function ensureSectionExpandedFor(node) {
   window.dispatchEvent(new Event("resize"));
 }
 
-function enhanceSections() {
-  if (!markdownContainer) return;
-  const h3List = Array.from(markdownContainer.querySelectorAll("h3"));
+function enhanceSections(root) {
+  if (!root) return;
+  const h3List = Array.from(root.querySelectorAll("h3"));
 
   h3List.forEach((h3) => {
     const category = SECTION_CATEGORY_BY_ID[h3.id] || "supplement";
@@ -790,12 +957,12 @@ function isValidGlossaryBoundary(text, start, alias) {
   return true;
 }
 
-function collectGlossaryScopes() {
-  if (!markdownContainer) return [];
+function collectGlossaryScopes(root) {
+  if (!root) return [];
   const scopes = [];
   let currentIntroNodes = [];
 
-  Array.from(markdownContainer.children).forEach((child) => {
+  Array.from(root.children).forEach((child) => {
     if (child.tagName === "H2" || child.tagName === "HR" || child.classList.contains("back-to-toc")) {
       if (currentIntroNodes.length > 0) {
         scopes.push(currentIntroNodes);
@@ -821,8 +988,8 @@ function collectGlossaryScopes() {
   return scopes;
 }
 
-function enhanceGlossaryTerms(glossaryItems) {
-  if (!markdownContainer || !Array.isArray(glossaryItems) || glossaryItems.length === 0) return;
+function enhanceGlossaryTerms(glossaryItems, root) {
+  if (!root || !Array.isArray(glossaryItems) || glossaryItems.length === 0) return;
 
   const candidates = [];
   glossaryItems.forEach((entry) => {
@@ -851,7 +1018,7 @@ function enhanceGlossaryTerms(glossaryItems) {
     "STYLE"
   ]);
 
-  const scopes = collectGlossaryScopes();
+  const scopes = collectGlossaryScopes(root);
   scopes.forEach((rootNodes) => {
     const seenIds = new Set();
     const textNodes = [];
@@ -1276,7 +1443,7 @@ function wireActiveHeadingTracker() {
         } else if (quickGuideSection && quickGuideSection.getBoundingClientRect().top <= threshold) {
           readingBarTitle.textContent = quickGuideSection.querySelector("h2")?.textContent?.trim() || "クイックガイド";
         } else {
-          readingBarTitle.textContent = "目次・案内";
+          readingBarTitle.textContent = currentChapter ? currentChapter.title : "目次・案内";
         }
       }
     }
@@ -1326,10 +1493,10 @@ function wireActiveHeadingTracker() {
   updateCurrentHeading();
 }
 
-function addBackToTocLinks() {
-  if (!markdownContainer || !tocSidebar) return;
+function addBackToTocLinks(root) {
+  if (!root) return;
 
-  const headings = Array.from(markdownContainer.querySelectorAll("h2"));
+  const headings = Array.from(root.querySelectorAll("h2"));
   headings.forEach((heading, index) => {
     const backToToc = document.createElement("div");
     const link = document.createElement("a");
@@ -1342,7 +1509,7 @@ function addBackToTocLinks() {
     link.setAttribute("aria-label", `${headingText}を読み終えて目次へ戻る`);
     backToToc.appendChild(link);
 
-    markdownContainer.insertBefore(backToToc, headings[index + 1] ?? null);
+    root.insertBefore(backToToc, headings[index + 1] ?? null);
   });
 }
 
@@ -1364,13 +1531,28 @@ function wireBackToTocLinks() {
   });
 }
 
+// 検索の対象：今のページの章と、画面に出していないほかの章（章の順に並ぶ）。
+// 親ページでは、すべての章が画面に出していない側にある。
+function searchGroups() {
+  if (chapterGroups.length > 0) return chapterGroups;
+  return markdownContainer ? [{ slug: "", title: "", root: markdownContainer }] : [];
+}
+
+// 一致箇所（mark）が、どの章にあるか。
+const markGroups = new WeakMap();
+
+function isMarkOnThisPage(mark) {
+  return Boolean(markdownContainer && markdownContainer.contains(mark));
+}
+
 function clearHighlights() {
-  const marks = markdownContainer.querySelectorAll("mark");
-  marks.forEach((mark) => {
-    const parent = mark.parentNode;
-    if (!parent) return;
-    parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
-    parent.normalize();
+  searchGroups().forEach((group) => {
+    group.root.querySelectorAll("mark").forEach((mark) => {
+      const parent = mark.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
+      parent.normalize();
+    });
   });
 }
 
@@ -1381,40 +1563,43 @@ function highlightKeyword(keyword) {
   const regex = new RegExp(escaped, "gi");
   const createdMarks = [];
 
-  const walker = document.createTreeWalker(markdownContainer, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
-      if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-      if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
-        return NodeFilter.FILTER_REJECT;
+  searchGroups().forEach((group) => {
+    const walker = document.createTreeWalker(group.root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
       }
-      if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    }
-  });
-
-  const textNodes = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode);
-
-  textNodes.forEach((textNode) => {
-    const text = textNode.nodeValue;
-    if (!text || !regex.test(text)) return;
-    regex.lastIndex = 0;
-
-    const fragment = document.createDocumentFragment();
-    let cursor = 0;
-    text.replace(regex, (matched, offset) => {
-      const start = Number(offset);
-      if (start > cursor) fragment.append(text.slice(cursor, start));
-      const mark = document.createElement("mark");
-      mark.textContent = matched;
-      fragment.append(mark);
-      createdMarks.push(mark);
-      cursor = start + matched.length;
-      return matched;
     });
-    if (cursor < text.length) fragment.append(text.slice(cursor));
-    textNode.parentNode?.replaceChild(fragment, textNode);
+
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    textNodes.forEach((textNode) => {
+      const text = textNode.nodeValue;
+      if (!text || !regex.test(text)) return;
+      regex.lastIndex = 0;
+
+      const fragment = document.createDocumentFragment();
+      let cursor = 0;
+      text.replace(regex, (matched, offset) => {
+        const start = Number(offset);
+        if (start > cursor) fragment.append(text.slice(cursor, start));
+        const mark = document.createElement("mark");
+        mark.textContent = matched;
+        fragment.append(mark);
+        createdMarks.push(mark);
+        markGroups.set(mark, group);
+        cursor = start + matched.length;
+        return matched;
+      });
+      if (cursor < text.length) fragment.append(text.slice(cursor));
+      textNode.parentNode?.replaceChild(fragment, textNode);
+    });
   });
 
   createdMarks.forEach((mark) => ensureSectionExpandedFor(mark));
@@ -1422,24 +1607,8 @@ function highlightKeyword(keyword) {
 }
 
 // 検索結果の一覧：一致箇所の「章 › 節」を求める。
-function describeMatchLocation(mark, chapterCache) {
-  let topLevel = mark;
-  while (topLevel.parentElement && topLevel.parentElement !== markdownContainer) {
-    topLevel = topLevel.parentElement;
-  }
-
-  let chapter = chapterCache.get(topLevel);
-  if (chapter === undefined) {
-    chapter = "";
-    for (let node = topLevel; node; node = node.previousElementSibling) {
-      if (node.tagName === "H2") {
-        chapter = node.dataset.cleanTitle || node.textContent?.trim() || "";
-        break;
-      }
-    }
-    chapterCache.set(topLevel, chapter);
-  }
-
+function describeMatchLocation(mark) {
+  const chapter = markGroups.get(mark)?.title || "";
   const sectionHeading = mark.closest(".h3-section")?.querySelector(":scope > h3");
   const section = sectionHeading ? sectionHeading.dataset.cleanTitle || "" : "";
   return [chapter, section].filter(Boolean).join(" › ") || "冒頭";
@@ -1492,6 +1661,13 @@ function wireSearch() {
   // 狭い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
   const narrowQuery = window.matchMedia("(max-width: 640px)");
   let resultsOpen = !narrowQuery.matches;
+
+  // 今のページ（章）にある一致箇所の番号（currentMatches の中での位置）。
+  const localMatchIndexes = () =>
+    currentMatches.reduce((list, mark, index) => {
+      if (isMarkOnThisPage(mark)) list.push(index);
+      return list;
+    }, []);
 
   const applyResultsOpen = () => {
     if (!searchResultsToggle || !searchResultsList) return;
@@ -1615,7 +1791,6 @@ function wireSearch() {
       return;
     }
 
-    const chapterCache = new Map();
     const fragment = document.createDocumentFragment();
     currentMatches.slice(0, SEARCH_LIST_LIMIT).forEach((mark, index) => {
       const item = document.createElement("li");
@@ -1626,7 +1801,15 @@ function wireSearch() {
 
       const where = document.createElement("span");
       where.className = "search-results__where";
-      where.textContent = describeMatchLocation(mark, chapterCache);
+      where.textContent = describeMatchLocation(mark);
+      // 章ページでは、ほかの章の行に「別の章へ移動」と添える（押すとその章のページへ移る）。
+      if (IS_CHAPTER_PAGE && !isMarkOnThisPage(mark)) {
+        button.classList.add("search-results__item--other");
+        const jump = document.createElement("span");
+        jump.className = "search-results__jump";
+        jump.textContent = "別の章へ移動";
+        where.append(jump);
+      }
 
       const text = document.createElement("span");
       text.className = "search-results__context";
@@ -1664,25 +1847,49 @@ function wireSearch() {
       return;
     }
 
-    const positionLabel = activeMatchIndex >= 0 ? `${activeMatchIndex + 1} / ${total}件` : `${total}件`;
-    const inClosedFold =
-      activeMatchIndex >= 0 &&
-      Boolean(currentMatches[activeMatchIndex]?.closest("details.spoiler-fold:not([open])"));
-    summaryStatus.textContent = `「${keyword}」の一致: ${positionLabel}${inClosedFold ? "（畳まれた箇所の中）" : ""}`;
+    // 親ページは一覧から各章へ移る。章ページは「前へ／次へ」でその章の中を移り、ほかの章へは一覧から移る。
+    const local = localMatchIndexes();
+    let countLabel;
+    if (!IS_CHAPTER_PAGE) {
+      countLabel = `${total}件（一覧から各章へ移動できる）`;
+    } else if (local.length === 0) {
+      countLabel = `この章 0件（全体 ${total}件。一覧からほかの章へ移動できる）`;
+    } else {
+      const position = local.indexOf(activeMatchIndex);
+      const here = position >= 0 ? `${position + 1} / ${local.length}件` : `${local.length}件`;
+      countLabel = `この章 ${here}（全体 ${total}件）`;
+    }
+    const activeMark = activeMatchIndex >= 0 ? currentMatches[activeMatchIndex] : null;
+    const inClosedFold = Boolean(activeMark?.closest("details.spoiler-fold:not([open])"));
+    summaryStatus.textContent = `「${keyword}」の一致: ${countLabel}${inClosedFold ? "（畳まれた箇所の中）" : ""}`;
     summaryStatus.classList.remove("error");
-    if (searchNav) searchNav.hidden = false;
+    if (searchNav) searchNav.hidden = local.length === 0;
     if (searchToolbar) searchToolbar.classList.add("is-active");
   };
 
   // reveal が真のとき（一覧の行を押したとき）だけ、畳まれた「先の内容に触れる箇所」を開く。
   // 「検索」「前へ／次へ」では開かず、その箇所の開閉ボタンの位置へ移動する。
+  // 別の章の一致箇所へ：その章のページへ移り、そこで同じ語を検索して、その章の何番目かの一致箇所へ移動する。
+  const goToMatchInOtherChapter = (mark) => {
+    const group = markGroups.get(mark);
+    if (!group || !group.slug) return;
+    const ordinal = currentMatches.filter((candidate) => markGroups.get(candidate) === group).indexOf(mark);
+    const params = new URLSearchParams({ q: currentKeyword, n: String(Math.max(ordinal, 0)) });
+    window.location.href = `${chapterUrl(group)}?${params.toString()}`;
+  };
+
   const focusMatch = (index, { reveal = false } = {}) => {
     if (currentMatches.length === 0) return;
+    const total = currentMatches.length;
+    const nextIndex = ((index % total) + total) % total;
+    if (!isMarkOnThisPage(currentMatches[nextIndex])) {
+      goToMatchInOtherChapter(currentMatches[nextIndex]);
+      return;
+    }
     if (activeMatchIndex >= 0 && currentMatches[activeMatchIndex]) {
       currentMatches[activeMatchIndex].classList.remove("is-active");
     }
-    const total = currentMatches.length;
-    activeMatchIndex = ((index % total) + total) % total;
+    activeMatchIndex = nextIndex;
     const target = currentMatches[activeMatchIndex];
     ensureSectionExpandedFor(target);
     if (reveal) {
@@ -1696,10 +1903,31 @@ function wireSearch() {
     scrollMatchIntoView(closedFold?.querySelector(":scope > summary") ?? target);
   };
 
+  // 「前へ／次へ」：今の章の中だけを移動する。
+  const stepLocalMatch = (step) => {
+    const local = localMatchIndexes();
+    if (local.length === 0) return;
+    const position = local.indexOf(activeMatchIndex);
+    const nextPosition =
+      position < 0 ? (step < 0 ? local.length - 1 : 0) : (position + step + local.length) % local.length;
+    focusMatch(local[nextPosition]);
+  };
+
+  // 今の章に一致箇所がないとき（親ページでは常に）は、移動せずに一覧を開く。
+  const showMatches = (step) => {
+    if (localMatchIndexes().length > 0) {
+      stepLocalMatch(step);
+      return;
+    }
+    resultsOpen = true;
+    applyResultsOpen();
+    updateSearchUi(currentKeyword);
+  };
+
   const runSearch = ({ shouldScroll, step = 1 } = { shouldScroll: false, step: 1 }) => {
     const keyword = searchInput.value.trim();
     if (shouldScroll && keyword && keyword === currentKeyword && currentMatches.length > 0) {
-      focusMatch(activeMatchIndex + step);
+      showMatches(step);
       return;
     }
 
@@ -1709,7 +1937,7 @@ function wireSearch() {
     renderResultList();
 
     if (shouldScroll && keyword && currentMatches.length > 0) {
-      focusMatch(step < 0 ? currentMatches.length - 1 : 0);
+      showMatches(step);
       return;
     }
     updateSearchUi(keyword);
@@ -1729,8 +1957,8 @@ function wireSearch() {
     }, 180);
   });
 
-  prevMatchButton?.addEventListener("click", () => focusMatch(activeMatchIndex - 1));
-  nextMatchButton?.addEventListener("click", () => focusMatch(activeMatchIndex + 1));
+  prevMatchButton?.addEventListener("click", () => stepLocalMatch(-1));
+  nextMatchButton?.addEventListener("click", () => stepLocalMatch(1));
 
   clearSearchButton.addEventListener("click", () => {
     if (inputDebounceTimer) clearTimeout(inputDebounceTimer);
@@ -1765,18 +1993,40 @@ function wireSearch() {
   });
 
   // 畳まれた箇所が開閉されたら、一覧の伏せた行と件数表示を合わせ直す。
-  markdownContainer.addEventListener(
+  const resyncAfterFoldChange = () => {
+    if (currentMatches.length > 0) {
+      refreshMaskedRows();
+      updateSearchUi(currentKeyword);
+    }
+  };
+  markdownContainer?.addEventListener(
     "toggle",
     (event) => {
-      if (event.target instanceof HTMLDetailsElement && currentMatches.length > 0) {
-        refreshMaskedRows();
-        updateSearchUi(currentKeyword);
-      }
+      if (event.target instanceof HTMLDetailsElement) resyncAfterFoldChange();
     },
     true
   );
+  onSpoilerFoldsChanged = resyncAfterFoldChange;
+
+  // ほかのページの一覧から移ってきたとき（?q=語&n=番号）：同じ語を検索し、この章の n 番目の一致箇所へ移動する。
+  const params = new URLSearchParams(window.location.search);
+  const arrivedKeyword = (params.get("q") || "").trim();
+  if (IS_CHAPTER_PAGE && arrivedKeyword) {
+    history.replaceState(null, "", window.location.pathname + window.location.hash);
+    searchInput.value = arrivedKeyword;
+    runSearch({ shouldScroll: false });
+    const local = localMatchIndexes();
+    const ordinal = Number.parseInt(params.get("n") || "0", 10);
+    if (local.length > 0) {
+      const position = Number.isInteger(ordinal) && ordinal >= 0 && ordinal < local.length ? ordinal : 0;
+      focusMatch(local[position], { reveal: true });
+      return true;
+    }
+    return false;
+  }
 
   updateSearchUi("");
+  return false;
 }
 
 // クイックガイドと主要年表のネタバレ部分：一度開いた読者には、次回も開いた状態で見せる。
@@ -1816,10 +2066,10 @@ function createSpoilerFold(until, kind) {
   return details;
 }
 
-function enhanceSpoilerFolds() {
-  if (!markdownContainer) return;
+function enhanceSpoilerFolds(root) {
+  if (!root) return;
 
-  markdownContainer.querySelectorAll(".analysis-block[data-spoiler-until]").forEach((block) => {
+  root.querySelectorAll(".analysis-block[data-spoiler-until]").forEach((block) => {
     const title = block.querySelector(":scope > .analysis-block__title");
     if (!title) return;
     const details = createSpoilerFold(block.dataset.spoilerUntil || "", "analysis");
@@ -1834,7 +2084,7 @@ function enhanceSpoilerFolds() {
     block.appendChild(details);
   });
 
-  markdownContainer.querySelectorAll("figure[data-spoiler-until]").forEach((figure) => {
+  root.querySelectorAll("figure[data-spoiler-until]").forEach((figure) => {
     const details = createSpoilerFold(figure.dataset.spoilerUntil || "", "figure");
     details.classList.add("wiki-spoiler");
     figure.parentNode?.insertBefore(details, figure);
@@ -1855,10 +2105,14 @@ function wireSpoilerFolds() {
   spoilerFoldsToggle?.addEventListener("click", () => {
     forwardSpoilersOpen = !forwardSpoilersOpen;
     writeStoredFlag(FORWARD_SPOILER_STORAGE_KEY, forwardSpoilersOpen);
-    markdownContainer?.querySelectorAll("details.spoiler-fold").forEach((details) => {
-      details.open = forwardSpoilersOpen;
+    // 画面に出していないほかの章も合わせる（検索の一覧で、伏せる行を正しく決めるため）。
+    searchGroups().forEach((group) => {
+      group.root.querySelectorAll("details.spoiler-fold").forEach((details) => {
+        details.open = forwardSpoilersOpen;
+      });
     });
     syncSpoilerFoldsToggleUi();
+    onSpoilerFoldsChanged();
     window.dispatchEvent(new Event("resize"));
   });
   // 個別に開閉したときも、現在地の表示などを計算し直す。
@@ -1910,6 +2164,8 @@ function scrollToLocationHash() {
   if (target) {
     ensureSectionExpandedFor(target);
     target.scrollIntoView({ block: "start" });
+  } else {
+    redirectHashToChapter();
   }
 }
 
@@ -1924,8 +2180,8 @@ async function init() {
   let glossaryItems = [];
 
   const [noteResult, glossaryResult] = await Promise.allSettled([
-    fetch("./note.md", { cache: "no-store" }),
-    fetch("./glossary.json", { cache: "no-store" })
+    fetch("/note.md", { cache: "no-store" }),
+    fetch("/glossary.json", { cache: "no-store" })
   ]);
 
   if (noteResult.status === "fulfilled" && noteResult.value.ok) {
@@ -1948,28 +2204,38 @@ async function init() {
     }
   }
 
-  const rendered = simpleMarkdownToHtml(normalizeSource(markdown));
-  markdownContainer.innerHTML = sanitizeGeneratedHtml(rendered);
+  // note.md 全体を、画面に出さない入れ物の中で組み立ててから、章ごとに分ける。
+  // どのページでも同じ手順で組み立てるので、見出しの id や用語の説明は、1ページだった頃と同じになる。
+  const fullRoot = document.createElement("div");
+  fullRoot.innerHTML = sanitizeGeneratedHtml(simpleMarkdownToHtml(normalizeSource(markdown)));
   requestAnimationFrame(() => {
-    prepareHeadingMetadata();
-    addBackToTocLinks();
-    enhanceSections();
-    enhanceSpoilerFolds();
+    prepareHeadingMetadata(fullRoot);
+    addBackToTocLinks(fullRoot);
+    enhanceSections(fullRoot);
+    enhanceSpoilerFolds(fullRoot);
     checkGlossaryStages(glossaryItems);
-    enhanceGlossaryTerms(glossaryItems);
+    enhanceGlossaryTerms(glossaryItems, fullRoot);
+    chapterGroups = splitIntoChapters(fullRoot);
+    if (IS_CHAPTER_PAGE) {
+      mountCurrentChapter({ useFirst: !loadedFromFile });
+    }
+    if (loadedFromFile && redirectHashToChapter()) return;
+    renderChapterIndex();
     buildToc();
+    renderChapterNav();
     wireSectionFolding();
     wireSpoilerFolds();
     wireGlossaryPopovers(glossaryItems);
     wireTocToggle();
     wireBackToTocLinks();
     wireActiveHeadingTracker();
-    wireSearch();
+    const movedToMatch = wireSearch();
     window.addEventListener("hashchange", scrollToLocationHash);
     if (!loadedFromFile) {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
       searchToolbar?.classList.add("is-active");
     }
+    if (movedToMatch) return;
     if (IS_RELOAD) {
       if (window.location.hash) {
         history.replaceState(null, "", window.location.pathname + window.location.search);

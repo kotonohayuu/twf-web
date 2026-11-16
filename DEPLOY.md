@@ -29,5 +29,7 @@ GitHub Push を使わずローカルPCから直接デプロイしたい場合は
 
 - `_headers`: セキュリティヘッダー（CSP等）および `note.md` のキャッシュ制御（Cloudflare Web Analytics 有効化にも対応済み）
 - `.assetsignore`: 運用ドキュメント（`DEPLOY.md`, `PROJECT_RULES.md`）や `.ps1` スクリプト等を公開アセットから除外する設定
-- `index.html` / `app.js` / `styles.css`: 目次・検索・年表UI本体
+- `index.html`: 親ページ（クイックガイド・主要年表・章の一覧）
+- `file1.html` などの章ページ: 各章の本文を表示する子ページ（URLは `.html` を省いた形）
+- `app.js` / `styles.css`: 目次・検索・年表UI本体（章ページの本文は `note.md` から章ごとに取り出して表示）
 - `note.md`: サイト本文データ
