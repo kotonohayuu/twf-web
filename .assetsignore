@@ -2,3 +2,5 @@
 /DEPLOY.md
 /PROJECT_RULES.md
 /vercel.json
+/images/*.png
+/images/originals/

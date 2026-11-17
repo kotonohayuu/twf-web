@@ -433,7 +433,7 @@ VCR特有の真っ青なブルースクリーンと数秒の黒画面を経て�
 
 ![ジェニー・レターソン](./images/jenny_letterson.webp)
 
-BSIの業務用ゲーム筐体「BunnyFarm」を巡る記録映像。ソフィー・ウォルテン本人が初めて視点人物として本格登場するエピソード。
+2021年3月19日公開のシリーズ第3話。BSIの業務用ゲーム筐体「BunnyFarm」を巡る記録映像。ソフィー・ウォルテン本人が初めて視点人物として本格登場するエピソード。
 
 **小目次（ジャンプ）**
 
@@ -723,7 +723,7 @@ souvenirに続いて公開されたこのミニエピソードは、シリーズ
 
 【Bon's Burgersのショー映像。「All I See is You」が流れ、ロゴ表示、観客の拍手、カーテンが開きShowstoppersが現れ「THE SHOWSTOPPERS」と表示される】
 
-- Boozoo：「Tip Through the Tulips」（Sweet Tuesdayカバー版）／下部「BOOZOO」／庭にいる小型Boozoo
+- Boozoo：「Tiptoe Through the Tulips」（Sweet Tuesdayカバー版）／下部「BOOZOO」／庭にいる小型Boozoo
 - Banny：「Drift Away」／下部「BANNY」／テーブルを囲む子供たち→カートゥーン版Bannyが花畑と目付きの太陽の中で跳ね回る
 - Sha：「Sweet Music」／下部「SHA」／花を背景にしたカートゥーンSha
 - 【グリッチ】食事エリア→Backstageドア→テープ再開

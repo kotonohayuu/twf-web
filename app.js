@@ -914,17 +914,23 @@ function renderChapterNav() {
   chapterNav.appendChild(home);
 }
 
+function safeDecodeHash(rawHash) {
+  if (!rawHash || rawHash.length <= 1) return "";
+  const body = rawHash.startsWith("#") ? rawHash.slice(1) : rawHash;
+  if (!body) return "";
+  try {
+    return decodeURIComponent(body);
+  } catch (_error) {
+    return "";
+  }
+}
+
 // URL の #見出し が、今のページになく、ほかの章にあるなら、その章のページへ移る。
 // 1ページだった頃のリンク（/#f2-t3 など）も、これで該当する章へ届く。
 function redirectHashToChapter() {
   const rawHash = window.location.hash;
-  if (!rawHash || rawHash.length <= 1) return false;
-  let targetId = "";
-  try {
-    targetId = decodeURIComponent(rawHash.slice(1));
-  } catch (_error) {
-    return false;
-  }
+  const targetId = safeDecodeHash(rawHash);
+  if (!targetId) return false;
   if (document.getElementById(targetId)) return false;
   const selector = `[id="${CSS.escape(targetId)}"]`;
   const owner = chapterGroups.find(
@@ -1038,17 +1044,23 @@ function writeSavedFoldPreference(collapsed) {
 function wireSectionFolding() {
   if (!markdownContainer) return;
 
-  if (readSavedFoldPreference()) {
-    markdownContainer.querySelectorAll(".h3-section--event").forEach((sec) => {
+  const eventSections = Array.from(markdownContainer.querySelectorAll(".h3-section--event"));
+  if (foldEventsToggle) {
+    foldEventsToggle.hidden = eventSections.length === 0;
+  }
+
+  if (eventSections.length > 0 && readSavedFoldPreference()) {
+    eventSections.forEach((sec) => {
       setSectionCollapsed(sec, true);
     });
   }
   syncFoldToggleUi();
 
   foldEventsToggle?.addEventListener("click", () => {
+    if (eventSections.length === 0) return;
     const anyCollapsed = Boolean(markdownContainer.querySelector(".h3-section--event.is-collapsed"));
     const nextCollapsed = !anyCollapsed;
-    markdownContainer.querySelectorAll(".h3-section--event").forEach((sec) => {
+    eventSections.forEach((sec) => {
       setSectionCollapsed(sec, nextCollapsed);
     });
     writeSavedFoldPreference(nextCollapsed);
@@ -1076,9 +1088,8 @@ function wireSectionFolding() {
     if (!(event.target instanceof Element)) return;
     const anchor = event.target.closest('a[href^="#"]');
     if (!anchor || anchor.classList.contains("back-to-toc__link")) return;
-    const rawHref = anchor.getAttribute("href") || "";
-    if (rawHref.length <= 1) return;
-    const targetId = decodeURIComponent(rawHref.slice(1));
+    const targetId = safeDecodeHash(anchor.getAttribute("href") || "");
+    if (!targetId) return;
     const target = document.getElementById(targetId);
     if (target) {
       ensureSectionExpandedFor(target);
@@ -1136,6 +1147,12 @@ function collectGlossaryScopes(root) {
   if (currentIntroNodes.length > 0) {
     scopes.push(currentIntroNodes);
   }
+
+  // 畳まれた「先の内容に触れる箇所」が節の初出枠を使い切らないよう、独立した枠として扱う。
+  root.querySelectorAll("details.spoiler-fold").forEach((fold) => {
+    scopes.push([fold]);
+  });
+
   return scopes;
 }
 
@@ -1175,12 +1192,16 @@ function enhanceGlossaryTerms(glossaryItems, root) {
     const textNodes = [];
 
     rootNodes.forEach((rootNode) => {
+      const isSpoilerScope = rootNode instanceof Element && rootNode.matches("details.spoiler-fold");
       const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
           if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
           const parent = node.parentElement;
           if (!parent) return NodeFilter.FILTER_REJECT;
           if (excludedTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+          if (!isSpoilerScope && parent.closest("details.spoiler-fold")) {
+            return NodeFilter.FILTER_REJECT;
+          }
           if (
             parent.closest(
               "a, button, code, pre, figcaption, summary, h1, h2, h3, h4, .back-to-toc, .sec-badge, .sec-fold-btn, .term-wrap, .term-card, .analysis-block__title, .analysis-block__conclusion"
@@ -1564,9 +1585,9 @@ function wireActiveHeadingTracker() {
 
   const updateCurrentHeading = () => {
     ticking = false;
-    // 狭い画面で検索バーが張り付いているときは、その下端までを「通り過ぎた」範囲とみなす。
+    // 検索バーが上に張り付いているときは、その下端までを「通り過ぎた」範囲とみなす。
     const searchStuck = parseFloat(document.documentElement.style.getPropertyValue("--search-stuck")) || 0;
-    const threshold = window.innerWidth <= 960 ? 84 + searchStuck : 96;
+    const threshold = (window.innerWidth <= 960 ? 84 : 96) + searchStuck;
     let activeHeading = null;
     let activeH2 = null;
 
@@ -1702,13 +1723,13 @@ function wireActiveHeadingTracker() {
   document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
     const anchor = event.target.closest('a[href^="#"]');
-    const rawHref = anchor?.getAttribute("href") || "";
-    if (rawHref.length <= 1) return;
-    rememberRequestedHeading(decodeURIComponent(rawHref.slice(1)));
+    const targetId = safeDecodeHash(anchor?.getAttribute("href") || "");
+    if (targetId) rememberRequestedHeading(targetId);
   });
 
   window.addEventListener("hashchange", () => {
-    rememberRequestedHeading(decodeURIComponent(window.location.hash.slice(1)));
+    const targetId = safeDecodeHash(window.location.hash);
+    if (targetId) rememberRequestedHeading(targetId);
   });
 
   // 利用者が自分でスクロールし始めたら、選ばれた見出しの記憶は捨てる。
@@ -1782,7 +1803,10 @@ function marksForMatch(mark) {
   return matchMarks.get(mark) || [mark];
 }
 
-// 見出しの日付を折り返さないための span は、検索する文字列の区切りにはしない。
+const SEARCH_BLOCK_SELECTOR = "p, li, figcaption, h2, h3, h4";
+const INTER_BLOCK_CONTAINERS = new Set(["UL", "OL", "DIV", "SECTION", "BLOCKQUOTE", "FIGURE", "DETAILS"]);
+
+// 用語の span や太字などの inline 要素は、検索する文字列の区切りにはしない（段落・箇条書き・見出しごとに繋ぐ）。
 function collectSearchTextRuns(root) {
   const runs = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -1792,17 +1816,20 @@ function collectSearchTextRuns(root) {
       if (parent.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary, script, style, mark")) {
         return NodeFilter.FILTER_REJECT;
       }
-      if (!node.nodeValue.trim() && !parent.closest("h3")) return NodeFilter.FILTER_REJECT;
+      const block = parent.closest(SEARCH_BLOCK_SELECTOR);
+      if (!node.nodeValue.trim() && (!block || INTER_BLOCK_CONTAINERS.has(parent.tagName))) {
+        return NodeFilter.FILTER_REJECT;
+      }
       return NodeFilter.FILTER_ACCEPT;
     }
   });
 
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    const heading = node.parentElement.closest("h3");
+    const block = node.parentElement.closest(SEARCH_BLOCK_SELECTOR);
     let run = runs[runs.length - 1];
-    if (!heading || !run || run.heading !== heading) {
-      run = { heading, text: "", nodes: [] };
+    if (!block || !run || run.block !== block) {
+      run = { block, text: "", nodes: [] };
       runs.push(run);
     }
     const start = run.text.length;
@@ -1810,6 +1837,39 @@ function collectSearchTextRuns(root) {
     run.nodes.push({ node, start, end: run.text.length });
   }
   return runs;
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// 「1974/05/02」「1974年5月2日」「05/02/1974」のような日付検索では、表記ゆれもまとめて一致させる。
+function buildKeywordRegex(keyword) {
+  const trimmed = String(keyword ?? "").trim();
+  if (!trimmed) return null;
+  const ymd = trimmed.match(/^(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})日?$/);
+  const mdy = !ymd ? trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/) : null;
+  const dateParts = ymd
+    ? { year: ymd[1], month: Number(ymd[2]), day: Number(ymd[3]) }
+    : mdy
+      ? { year: mdy[3], month: Number(mdy[1]), day: Number(mdy[2]) }
+      : null;
+
+  if (
+    dateParts &&
+    dateParts.month >= 1 &&
+    dateParts.month <= 12 &&
+    dateParts.day >= 1 &&
+    dateParts.day <= 31
+  ) {
+    const { year, month, day } = dateParts;
+    const mPat = month < 10 ? `0?${month}` : String(month);
+    const dPat = day < 10 ? `0?${day}` : String(day);
+    const pattern = `(?:${year}年${mPat}月${dPat}日|(?<!\\d)${year}[\\/-]${mPat}[\\/-]${dPat}(?!\\d)|(?<!\\d)${mPat}\\/${dPat}\\/${year}(?!\\d))`;
+    return new RegExp(pattern, "gi");
+  }
+
+  return new RegExp(escapeRegExp(trimmed), "gi");
 }
 
 function isMarkOnThisPage(mark) {
@@ -1829,9 +1889,8 @@ function clearHighlights() {
 
 function highlightKeyword(keyword) {
   clearHighlights();
-  if (!keyword) return [];
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(escaped, "gi");
+  const regex = buildKeywordRegex(keyword);
+  if (!regex) return [];
   const createdMarks = [];
 
   searchGroups().forEach((group) => {
@@ -1893,11 +1952,15 @@ function describeMatchContext(mark) {
   const parts = marksForMatch(mark);
   const lastPart = parts[parts.length - 1];
   const block =
-    mark.closest("p, li, figcaption, h2, h3, h4, blockquote, td, th") || mark.parentElement || mark;
+    mark.closest(SEARCH_BLOCK_SELECTOR) || mark.closest("blockquote, td, th") || mark.parentElement || mark;
+  const isSearchBlock = block instanceof Element && block.matches(SEARCH_BLOCK_SELECTOR);
   const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (!node.parentElement) return NodeFilter.FILTER_REJECT;
       if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (isSearchBlock && node.parentElement.closest(SEARCH_BLOCK_SELECTOR) !== block) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;
@@ -1978,8 +2041,9 @@ function collectSearchCorpus() {
 
 function countKeywordInCorpus(corpus, keyword) {
   if (!corpus || !keyword) return 0;
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const matches = corpus.match(new RegExp(escaped, "gi"));
+  const regex = buildKeywordRegex(keyword);
+  if (!regex) return 0;
+  const matches = corpus.match(regex);
   return matches ? matches.length : 0;
 }
 
@@ -2019,14 +2083,19 @@ function buildSearchCandidates(glossaryItems, corpus) {
     const count = countKeywordInCorpus(corpus, trimmed);
     if (count <= 0) return;
     seenKeywords.add(key);
+    let effectiveMeta = meta;
+    if (!effectiveMeta) {
+      const ymd = trimmed.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (ymd) effectiveMeta = `${Number(ymd[1])}年${Number(ymd[2])}月${Number(ymd[3])}日`;
+    }
     candidates.push({
       keyword: trimmed,
-      meta: meta && meta !== trimmed ? meta : "",
+      meta: effectiveMeta && effectiveMeta !== trimmed ? effectiveMeta : "",
       entryId,
       isStarter,
       count,
       normKeyword: normalizeForSuggest(trimmed),
-      normMeta: normalizeForSuggest(meta)
+      normMeta: normalizeForSuggest(effectiveMeta)
     });
   };
 
@@ -2081,7 +2150,11 @@ function wireSearch(glossaryItems = []) {
 
   // 張り付いた検索バーの高さを CSS に渡す（目次などで飛んだ見出しが、バーに隠れないようにする）。
   function syncSearchStuck() {
-    const active = Boolean(searchToolbar && searchToolbar.classList.contains("is-active"));
+    const active = Boolean(
+      searchToolbar &&
+        searchToolbar.classList.contains("is-active") &&
+        window.getComputedStyle(searchToolbar).position === "sticky"
+    );
     document.documentElement.style.setProperty(
       "--search-stuck",
       active ? `${searchToolbar.offsetHeight + 6}px` : "0px"
@@ -2162,7 +2235,9 @@ function wireSearch(glossaryItems = []) {
   const scrollMatchIntoView = (target) => {
     const stuckBottom = () => {
       if (!searchToolbar || !searchToolbar.classList.contains("is-active")) return 0;
-      const stickyTop = parseFloat(window.getComputedStyle(searchToolbar).top) || 0;
+      const style = window.getComputedStyle(searchToolbar);
+      if (style.position !== "sticky") return 0;
+      const stickyTop = parseFloat(style.top) || 0;
       return stickyTop + searchToolbar.offsetHeight;
     };
 
@@ -2448,6 +2523,8 @@ function wireSearch(glossaryItems = []) {
   const suggestPanel = document.createElement("div");
   suggestPanel.id = "searchSuggestPanel";
   suggestPanel.className = "search-suggest";
+  suggestPanel.setAttribute("role", "listbox");
+  suggestPanel.setAttribute("aria-label", "検索候補");
   suggestPanel.hidden = true;
   searchBox.appendChild(suggestPanel);
 
@@ -2569,11 +2646,14 @@ function wireSearch(glossaryItems = []) {
     if (matchingHistory.length > 0) {
       const group = document.createElement("div");
       group.className = "search-suggest__group";
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-labelledby", "searchSuggestGroupHistory");
 
       const head = document.createElement("div");
       head.className = "search-suggest__head";
 
       const title = document.createElement("span");
+      title.id = "searchSuggestGroupHistory";
       title.className = "search-suggest__title";
       title.textContent = "最近の検索";
 
@@ -2594,12 +2674,12 @@ function wireSearch(glossaryItems = []) {
 
       const list = document.createElement("ul");
       list.className = "search-suggest__list";
-      list.setAttribute("role", "listbox");
-      list.setAttribute("aria-label", "最近の検索");
+      list.setAttribute("role", "presentation");
 
       matchingHistory.forEach((kw) => {
         const li = document.createElement("li");
         li.className = "search-suggest__row";
+        li.setAttribute("role", "presentation");
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -2643,10 +2723,13 @@ function wireSearch(glossaryItems = []) {
     if (matchingCandidates.length > 0) {
       const group = document.createElement("div");
       group.className = "search-suggest__group";
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-labelledby", "searchSuggestGroupCandidates");
 
       const head = document.createElement("div");
       head.className = "search-suggest__head";
       const title = document.createElement("span");
+      title.id = "searchSuggestGroupCandidates";
       title.className = "search-suggest__title";
       title.textContent = rawQuery ? "検索候補" : "キーワード";
       head.appendChild(title);
@@ -2654,12 +2737,12 @@ function wireSearch(glossaryItems = []) {
 
       const list = document.createElement("ul");
       list.className = "search-suggest__chips";
-      list.setAttribute("role", "listbox");
-      list.setAttribute("aria-label", title.textContent);
+      list.setAttribute("role", "presentation");
 
       matchingCandidates.forEach((cand) => {
         const li = document.createElement("li");
         li.className = "search-suggest__chip-item";
+        li.setAttribute("role", "presentation");
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -2921,6 +3004,10 @@ function syncSpoilerFoldsToggleUi() {
 }
 
 function wireSpoilerFolds() {
+  if (spoilerFoldsToggle && markdownContainer) {
+    const hasSpoilers = Boolean(markdownContainer.querySelector("details.spoiler-fold"));
+    spoilerFoldsToggle.hidden = !hasSpoilers;
+  }
   syncSpoilerFoldsToggleUi();
   spoilerFoldsToggle?.addEventListener("click", () => {
     forwardSpoilersOpen = !forwardSpoilersOpen;
@@ -3006,9 +3093,8 @@ function holdHeadingPosition(target) {
 }
 
 function scrollToLocationHash() {
-  const rawHash = window.location.hash;
-  if (!rawHash || rawHash.length <= 1) return;
-  const targetId = decodeURIComponent(rawHash.slice(1));
+  const targetId = safeDecodeHash(window.location.hash);
+  if (!targetId) return;
   const target = document.getElementById(targetId);
   if (target) {
     ensureSectionExpandedFor(target);
