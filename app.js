@@ -2396,6 +2396,18 @@ function wireSearch(glossaryItems = []) {
     controls.appendChild(searchCloseButton);
   }
 
+  // 1行に固定した件数表示が入りきらないときは、検索した語のほうを「…」で詰め、件数と注記は必ず見せる。
+  const fitStatusKeyword = () => {
+    const keywordPart = summaryStatus.querySelector(".status__keyword");
+    if (!(keywordPart instanceof HTMLElement) || !summaryStatus.classList.contains("status--one-line")) return;
+    keywordPart.style.removeProperty("max-width");
+    const overflow = summaryStatus.scrollWidth - summaryStatus.clientWidth;
+    if (overflow > 0) {
+      keywordPart.style.maxWidth = `${Math.max(keywordPart.offsetWidth - overflow - 1, 32)}px`;
+    }
+  };
+  window.addEventListener("resize", fitStatusKeyword, { passive: true });
+
   const updateSearchUi = (keyword) => {
     if (!keyword) {
       summaryStatus.textContent = "";
@@ -2445,14 +2457,10 @@ function wireSearch(glossaryItems = []) {
     const foldNote = inClosedFold ? (narrow ? "（畳まれた箇所）" : "（畳まれた箇所の中）") : "";
     summaryStatus.classList.toggle("status--one-line", oneLine);
     if (oneLine) {
-      // 入りきらないときは、検索した語のほうを「…」で詰め、件数と注記は必ず見せる。
       const keywordPart = document.createElement("span");
       keywordPart.className = "status__keyword";
       keywordPart.textContent = keyword;
-      const countPart = document.createElement("span");
-      countPart.className = "status__count";
-      countPart.textContent = `${countLabel}${foldNote}`;
-      summaryStatus.replaceChildren("「", keywordPart, "」", countPart);
+      summaryStatus.replaceChildren("「", keywordPart, `」${countLabel}${foldNote}`);
     } else {
       summaryStatus.textContent = `${lead}${countLabel}${foldNote}`;
     }
@@ -2460,6 +2468,7 @@ function wireSearch(glossaryItems = []) {
     if (searchNav) searchNav.hidden = local.length === 0;
     if (searchCloseButton) searchCloseButton.hidden = false;
     if (searchToolbar) searchToolbar.classList.add("is-active");
+    fitStatusKeyword();
     syncSearchStuck();
   };
 
@@ -2941,6 +2950,11 @@ function wireSearch(glossaryItems = []) {
   const resyncAfterFoldChange = () => {
     if (currentMatches.length > 0) {
       refreshMaskedRows();
+      // 今の一致箇所が畳まれた箇所の中なら、その開閉ボタンに橙の印を付ける（件数表示の注記とそろえる）。
+      const activeMark = activeMatchIndex >= 0 ? currentMatches[activeMatchIndex] : null;
+      const closedFold =
+        activeMark && isMarkOnThisPage(activeMark) ? activeMark.closest("details.spoiler-fold:not([open])") : null;
+      markFoldTarget(closedFold?.querySelector(":scope > summary") ?? null);
       updateSearchUi(currentKeyword);
     }
   };
