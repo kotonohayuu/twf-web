@@ -2112,7 +2112,7 @@ html {
     overscroll-behavior: contain;
   }
 
-  /* 見た目は変えず、押せる範囲だけを広げる */
+  /* 見た目は変えず、押せる範囲だけを広げる（縦44px以上。inset は枠線の内側から測るので、枠線2pxぶん多めに取る） */
   .search-nav button,
   .search-toolbar__close,
   .search-results__toggle,
@@ -2121,17 +2121,46 @@ html {
   }
 
   .search-nav button::after,
-  .search-toolbar__close::after,
   .search-results__toggle::after {
     content: "";
     position: absolute;
-    inset: -6px -2px;
+    inset: -8px -4px;
+  }
+
+  .search-toolbar__close::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
   }
 
   .term-card__close::after {
     content: "";
     position: absolute;
-    inset: -12px -8px;
+    inset: -14px -10px;
+  }
+}
+
+/* 件数表示で、幅だけを取っておく文字（app.js）：見えなくする */
+.status__reserved {
+  visibility: hidden;
+}
+
+/* 横向きのスマホのような低い画面：親ページの検索バーを張り付けず、結果へ移るときは現在地バーの下に出す */
+@media (max-height: 500px) {
+  .page-home .search-toolbar.is-active {
+    position: static;
+  }
+
+  .page-home .search-results__list {
+    max-height: min(60vh, 480px);
+  }
+
+  .search-toolbar {
+    scroll-margin-top: calc(var(--reading-bar-h) + 2px);
+  }
+
+  .page-home .search-toolbar {
+    scroll-margin-top: 10px;
   }
 }
 
@@ -2159,6 +2188,7 @@ html {
   .search-toolbar .status {
     flex: 1 1 100%;
     font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
   }
 
   /* 前へ／次へがないとき（親ページ、この章に一致がないとき）は、× を件数表示と同じ行に置く */
