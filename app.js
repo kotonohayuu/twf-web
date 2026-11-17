@@ -1277,6 +1277,7 @@ function wireGlossaryPopovers(glossaryItems) {
 
   let activeTrigger = null;
   let activeCard = null;
+  let positionFrame = 0;
 
   const closePopover = ({ restoreFocus = false } = {}) => {
     if (activeCard) {
@@ -1293,6 +1294,59 @@ function wireGlossaryPopovers(glossaryItems) {
     }
   };
 
+  // 上部の現在地バー（幅960px以下で出る）の下端。出ていなければ 0。
+  const readingBarBottom = () => {
+    if (!readingBar) return 0;
+    const rect = readingBar.getBoundingClientRect();
+    return rect.height > 0 ? Math.max(rect.bottom, 0) : 0;
+  };
+
+  const positionPopover = () => {
+    if (!activeCard || !activeTrigger) return;
+    const margin = 12;
+    const gap = 6;
+    const width = document.documentElement.clientWidth;
+    const height = window.innerHeight;
+    const barBottom = readingBarBottom();
+    const minTop = barBottom + margin;
+    const rect = activeTrigger.getBoundingClientRect();
+    if (rect.bottom < barBottom || rect.top > height) {
+      closePopover();
+      return;
+    }
+    activeCard.style.maxHeight = `${Math.max(0, height - minTop - margin)}px`;
+    // スマホでは CSS の画面下部カードを使う。
+    if (window.matchMedia("(max-width: 640px)").matches) {
+      activeCard.style.removeProperty("left");
+      activeCard.style.removeProperty("top");
+      return;
+    }
+
+    // 複数行の inline 要素の外接矩形と、絶対配置の基準点は一致しない。
+    // 最後の行を起点に固定配置し、カード自身の寸法で画面内に収める。
+    const fragments = activeTrigger.getClientRects();
+    const lastRect = fragments[fragments.length - 1] || rect;
+    const cardRect = activeCard.getBoundingClientRect();
+    const left = Math.max(margin, Math.min(lastRect.left, width - cardRect.width - margin));
+    const below = rect.bottom + gap;
+    const above = rect.top - cardRect.height - gap;
+    const preferredTop = below + cardRect.height <= height - margin ? below : above;
+    const top = Math.max(minTop, Math.min(preferredTop, height - cardRect.height - margin));
+    activeCard.style.left = `${left}px`;
+    activeCard.style.top = `${top}px`;
+  };
+
+  const schedulePosition = () => {
+    if (!activeCard || positionFrame) return;
+    positionFrame = requestAnimationFrame(() => {
+      positionFrame = 0;
+      positionPopover();
+    });
+  };
+  window.addEventListener("scroll", schedulePosition, { passive: true, capture: true });
+  window.addEventListener("resize", schedulePosition, { passive: true });
+  markdownContainer.addEventListener("load", schedulePosition, true);
+
   const openPopover = (trigger, entry) => {
     closePopover();
     const wrap = trigger.closest(".term-wrap");
@@ -1302,14 +1356,6 @@ function wireGlossaryPopovers(glossaryItems) {
     card.className = "term-card";
     card.setAttribute("role", "dialog");
     card.setAttribute("aria-label", `${entry.term}の説明`);
-
-    const rect = trigger.getBoundingClientRect();
-    if (rect.left > window.innerWidth / 2) {
-      card.classList.add("term-card--right");
-    }
-    if (window.innerHeight - rect.bottom < 170 && rect.top > 190) {
-      card.classList.add("term-card--above");
-    }
 
     const header = document.createElement("div");
     header.className = "term-card__header";
@@ -1355,56 +1401,19 @@ function wireGlossaryPopovers(glossaryItems) {
     trigger.setAttribute("aria-expanded", "true");
     activeTrigger = trigger;
     activeCard = card;
+    positionPopover();
     keepTriggerVisible(trigger, card);
   };
 
-  // 上部の現在地バー（幅960px以下で出る）の下端。出ていなければ 0。
-  const readingBarBottom = () => {
-    if (!readingBar) return 0;
-    const rect = readingBar.getBoundingClientRect();
-    return rect.height > 0 ? Math.max(rect.bottom, 0) : 0;
-  };
-
-  const isCardPinned = (card) => window.getComputedStyle(card).position === "fixed";
-
-  // カードが、押した用語や現在地バーに重ならないようにする。
+  // スマホでは、画面下部のカードが押した用語に重ならないようにする。
   const keepTriggerVisible = (trigger, card) => {
-    if (isCardPinned(card)) {
-      // 狭い画面：カードは画面の下に固定される。用語がカードに隠れるなら、本文を上へずらす。
-      const cardTop = card.getBoundingClientRect().top;
-      const triggerBottom = trigger.getBoundingClientRect().bottom;
-      if (triggerBottom > cardTop - 8) {
-        window.scrollBy({ top: triggerBottom - cardTop + 16, behavior: "smooth" });
-      }
-      return;
-    }
-    const barBottom = readingBarBottom();
-    if (barBottom === 0) return;
-    // 現在地バーが出る幅（横向きのスマホなど）：上に出したカードがバーの下に潜るなら、下に出す。
-    if (card.classList.contains("term-card--above") && card.getBoundingClientRect().top < barBottom + 4) {
-      card.classList.remove("term-card--above");
-    }
-    // 下に出したカードが画面の下で切れるなら、用語がバーに隠れない範囲で本文を上へずらす。
-    const cardRect = card.getBoundingClientRect();
-    if (cardRect.bottom > window.innerHeight - 4) {
-      const room = trigger.getBoundingClientRect().top - barBottom - 8;
-      const delta = Math.min(cardRect.bottom - window.innerHeight + 8, room);
-      if (delta > 0) window.scrollBy({ top: delta, behavior: "smooth" });
+    if (!window.matchMedia("(max-width: 640px)").matches) return;
+    const cardTop = card.getBoundingClientRect().top;
+    const triggerBottom = trigger.getBoundingClientRect().bottom;
+    if (triggerBottom > cardTop - 8) {
+      window.scrollBy({ top: triggerBottom - cardTop + 16, behavior: "smooth" });
     }
   };
-
-  // 画面の下に固定したカードは、押した用語が画面の外へ出たら閉じる。
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!activeCard || !activeTrigger || !isCardPinned(activeCard)) return;
-      const rect = activeTrigger.getBoundingClientRect();
-      if (rect.bottom < readingBarBottom() || rect.top > window.innerHeight) {
-        closePopover();
-      }
-    },
-    { passive: true }
-  );
 
   const toggleTerm = (trigger) => {
     const entry = entryMap.get(trigger.dataset.termId || "");
@@ -1766,6 +1775,42 @@ function searchGroups() {
 
 // 一致箇所（mark）が、どの章にあるか。
 const markGroups = new WeakMap();
+// 日付の span をまたぐ1件の一致は、表示上の mark が複数でも1件として扱う。
+const matchMarks = new WeakMap();
+
+function marksForMatch(mark) {
+  return matchMarks.get(mark) || [mark];
+}
+
+// 見出しの日付を折り返さないための span は、検索する文字列の区切りにはしない。
+function collectSearchTextRuns(root) {
+  const runs = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || !node.nodeValue) return NodeFilter.FILTER_REJECT;
+      if (parent.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary, script, style, mark")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (!node.nodeValue.trim() && !parent.closest("h3")) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const heading = node.parentElement.closest("h3");
+    let run = runs[runs.length - 1];
+    if (!heading || !run || run.heading !== heading) {
+      run = { heading, text: "", nodes: [] };
+      runs.push(run);
+    }
+    const start = run.text.length;
+    run.text += node.nodeValue;
+    run.nodes.push({ node, start, end: run.text.length });
+  }
+  return runs;
+}
 
 function isMarkOnThisPage(mark) {
   return Boolean(markdownContainer && markdownContainer.contains(mark));
@@ -1790,41 +1835,39 @@ function highlightKeyword(keyword) {
   const createdMarks = [];
 
   searchGroups().forEach((group) => {
-    const walker = document.createTreeWalker(group.root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
-        if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-        if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
+    collectSearchTextRuns(group.root).forEach((run) => {
+      const matches = Array.from(run.text.matchAll(regex), (match) => ({
+        start: match.index,
+        end: match.index + match[0].length,
+        marks: []
+      }));
+      if (matches.length === 0) return;
 
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
-
-    textNodes.forEach((textNode) => {
-      const text = textNode.nodeValue;
-      if (!text || !regex.test(text)) return;
-      regex.lastIndex = 0;
-
-      const fragment = document.createDocumentFragment();
-      let cursor = 0;
-      text.replace(regex, (matched, offset) => {
-        const start = Number(offset);
-        if (start > cursor) fragment.append(text.slice(cursor, start));
-        const mark = document.createElement("mark");
-        mark.textContent = matched;
-        fragment.append(mark);
-        createdMarks.push(mark);
-        markGroups.set(mark, group);
-        cursor = start + matched.length;
-        return matched;
+      run.nodes.forEach(({ node, start, end }) => {
+        const overlaps = matches.filter((match) => match.start < end && match.end > start);
+        if (overlaps.length === 0) return;
+        const text = node.nodeValue;
+        const fragment = document.createDocumentFragment();
+        let cursor = 0;
+        overlaps.forEach((match) => {
+          const from = Math.max(match.start, start) - start;
+          const to = Math.min(match.end, end) - start;
+          if (from > cursor) fragment.append(text.slice(cursor, from));
+          const mark = document.createElement("mark");
+          mark.textContent = text.slice(from, to);
+          fragment.append(mark);
+          match.marks.push(mark);
+          cursor = to;
+        });
+        if (cursor < text.length) fragment.append(text.slice(cursor));
+        node.parentNode?.replaceChild(fragment, node);
       });
-      if (cursor < text.length) fragment.append(text.slice(cursor));
-      textNode.parentNode?.replaceChild(fragment, textNode);
+      matches.forEach(({ marks }) => {
+        const mark = marks[0];
+        matchMarks.set(mark, marks);
+        markGroups.set(mark, group);
+        createdMarks.push(mark);
+      });
     });
   });
 
@@ -1847,6 +1890,8 @@ function describeMatchLocation(mark) {
 
 // 検索結果の一覧：一致箇所の前後の文脈（それぞれ SEARCH_CONTEXT_LENGTH 字まで）を求める。
 function describeMatchContext(mark) {
+  const parts = marksForMatch(mark);
+  const lastPart = parts[parts.length - 1];
   const block =
     mark.closest("p, li, figcaption, h2, h3, h4, blockquote, td, th") || mark.parentElement || mark;
   const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
@@ -1864,8 +1909,8 @@ function describeMatchContext(mark) {
   let passedMatch = false;
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    if (mark.contains(node)) {
-      passedMatch = true;
+    if (parts.some((part) => part.contains(node))) {
+      if (lastPart.contains(node)) passedMatch = true;
     } else if (passedMatch) {
       after += node.nodeValue ?? "";
       if (after.length > SEARCH_CONTEXT_LENGTH * 2) break;
@@ -1926,20 +1971,7 @@ function normalizeForSuggest(text) {
 function collectSearchCorpus() {
   const chunks = [];
   searchGroups().forEach((group) => {
-    const walker = document.createTreeWalker(group.root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
-        if (!node.parentElement) return NodeFilter.FILTER_REJECT;
-        if (node.parentElement.closest(".back-to-toc, .sec-badge, .sec-fold-btn, .term-card, summary")) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        if (["SCRIPT", "STYLE", "MARK"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    while (walker.nextNode()) {
-      chunks.push(walker.currentNode.nodeValue);
-    }
+    collectSearchTextRuns(group.root).forEach((run) => chunks.push(run.text));
   });
   return chunks.join("\0");
 }
@@ -2179,7 +2211,7 @@ function wireSearch(glossaryItems = []) {
     }
     const context = describeMatchContext(mark);
     const hit = document.createElement("mark");
-    hit.textContent = mark.textContent ?? "";
+    hit.textContent = marksForMatch(mark).map((part) => part.textContent ?? "").join("");
     textEl.append(context.before, hit, context.after);
   };
 
@@ -2342,7 +2374,7 @@ function wireSearch(glossaryItems = []) {
       return;
     }
     if (activeMatchIndex >= 0 && currentMatches[activeMatchIndex]) {
-      currentMatches[activeMatchIndex].classList.remove("is-active");
+      marksForMatch(currentMatches[activeMatchIndex]).forEach((mark) => mark.classList.remove("is-active"));
     }
     activeMatchIndex = nextIndex;
     const target = currentMatches[activeMatchIndex];
@@ -2351,7 +2383,7 @@ function wireSearch(glossaryItems = []) {
       revealSpoilerFoldFor(target);
       refreshMaskedRows();
     }
-    target.classList.add("is-active");
+    marksForMatch(target).forEach((mark) => mark.classList.add("is-active"));
     updateSearchUi(currentKeyword);
     syncActiveResultRow();
     const closedFold = target.closest("details.spoiler-fold:not([open])");
