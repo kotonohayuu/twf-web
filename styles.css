@@ -2141,22 +2141,24 @@ html {
   }
 }
 
-/* 件数表示を1行に固定するとき（app.js）：入りきらなければ、検索した語のほうを「…」で詰める（幅は app.js が決める）。
-   中身の幅で検索バーやページを押し広げないようにする */
-.status.status--one-line {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-wrap: nowrap;
-  contain: inline-size;
-}
+@media (max-width: 640px) {
+  /* 件数表示を1行に固定するとき（app.js）：入りきらなければ、検索した語のほうを「…」で詰める（幅は app.js が決める）。
+     中身の幅で検索バーやページを押し広げないようにする */
+  .status.status--one-line {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    contain: inline-size;
+  }
 
-.status--one-line .status__keyword {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: top;
+  .status--one-line .status__keyword {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
 }
 
 /* 横向きのスマホのような低い画面：親ページの検索バーを張り付けず、結果へ移るときは現在地バーの下に出す */

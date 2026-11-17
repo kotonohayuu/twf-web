@@ -2407,6 +2407,15 @@ function wireSearch(glossaryItems = []) {
     }
   };
   window.addEventListener("resize", fitStatusKeyword, { passive: true });
+  // 画面の向きを変えるなどで 640px の境目をまたいだら、件数表示をその幅向けに書き直す。
+  const rewriteStatusForWidth = () => {
+    if (currentKeyword) updateSearchUi(currentKeyword);
+  };
+  if (typeof narrowQuery.addEventListener === "function") {
+    narrowQuery.addEventListener("change", rewriteStatusForWidth);
+  } else if (typeof narrowQuery.addListener === "function") {
+    narrowQuery.addListener(rewriteStatusForWidth);
+  }
 
   const updateSearchUi = (keyword) => {
     if (!keyword) {
