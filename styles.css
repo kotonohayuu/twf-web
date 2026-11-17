@@ -1854,3 +1854,47 @@ body.error-page {
     z-index: 50;
   }
 }
+
+/* ===== スマホ表示：文字の折り返し ===== */
+/* 小さい「ャ」「ッ」や長音「ー」、句読点を行頭に置かない（iPhone の既定に合わせ、Android でもそろえる） */
+html {
+  line-break: strict;
+}
+
+/* 最後の1〜2字だけが次の行に落ちないよう、行の長さをそろえて折り返す（対応していない環境では従来どおり） */
+.markdown-body h2,
+.h3-section > h3,
+.markdown-body .analysis-block__title,
+.wiki-figure figcaption,
+.spoiler-fold__summary,
+.tape-card__title,
+.chapter-nav__title,
+.chapter-nav__home,
+.term-card__title,
+#tocList a > span:last-child,
+.toc-list a > span:last-child,
+.timeline li,
+.status,
+.error-page__back {
+  text-wrap: balance;
+}
+
+/* 日付・時刻（app.js が見出しと目次で付ける）と、名前の区切り（トップの中心人物）は途中で割らない */
+.nowrap {
+  white-space: nowrap;
+}
+
+.name-part {
+  display: inline-block;
+}
+
+/* 用語カードの「閉じる」は折り返さない */
+.term-card__close {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* フッターのリンクは一塊で折り返す */
+.footer__credit a {
+  white-space: nowrap;
+}

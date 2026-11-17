@@ -600,6 +600,39 @@ function prepareHeadingMetadata(root) {
   });
 }
 
+// 「1974年5月2日」「午前0時23分」「3名」のような日付・時刻・数を、途中で折り返さない塊にする。
+// 見出しや目次で「1974年5 ／ 月2日」と割れたり、日付の直前の「（」だけが行末に残ったりするのを防ぐ。
+// 前後の括弧も同じ塊に入れる（文字そのものは変えない）。
+const UNBREAKABLE_DATE =
+  /[（(]?(?:(?:\d{4}年)?(?:\d{1,2}月)?\d{1,2}(?:[〜～]\d{1,2})?日|\d{4}年(?:\d{1,2}月)?|午[前後]\d{1,2}時(?:\d{1,2}分)?)[）)]?|\d+(?:名|人|本|体|枚|件|回|話|つ)/g;
+
+function keepDatesTogether(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const targets = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (node.parentElement?.closest(".nowrap, .sec-badge, .sec-fold-btn")) continue;
+    UNBREAKABLE_DATE.lastIndex = 0;
+    if (UNBREAKABLE_DATE.test(node.nodeValue || "")) targets.push(node);
+  }
+  targets.forEach((node) => {
+    const text = node.nodeValue || "";
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    text.replace(UNBREAKABLE_DATE, (matched, offset) => {
+      if (offset > cursor) fragment.append(text.slice(cursor, offset));
+      const span = document.createElement("span");
+      span.className = "nowrap";
+      span.textContent = matched;
+      fragment.append(span);
+      cursor = offset + matched.length;
+      return matched;
+    });
+    if (cursor < text.length) fragment.append(text.slice(cursor));
+    node.parentNode?.replaceChild(fragment, node);
+  });
+}
+
 function createTocItemElement(heading) {
   const li = document.createElement("li");
   const link = document.createElement("a");
@@ -624,6 +657,7 @@ function createTocItemElement(heading) {
 
   const titleSpan = document.createElement("span");
   titleSpan.textContent = rawText;
+  keepDatesTogether(titleSpan);
   link.appendChild(titleSpan);
 
   li.appendChild(link);
@@ -1205,8 +1239,11 @@ function enhanceGlossaryTerms(glossaryItems, root) {
         const wrap = document.createElement("span");
         wrap.className = "term-wrap";
 
-        const btn = document.createElement("button");
-        btn.type = "button";
+        // ボタン要素は行の途中で折り返せない塊になり、用語の手前で改行されて前の行が空くため、
+        // 本文と同じように折り返せる span をボタンとして扱う（キーボード操作は wireGlossaryPopovers）。
+        const btn = document.createElement("span");
+        btn.setAttribute("role", "button");
+        btn.tabIndex = 0;
         btn.className = "term-trigger";
         btn.dataset.termId = best.id;
         btn.setAttribute("aria-expanded", "false");
@@ -1320,6 +1357,16 @@ function wireGlossaryPopovers(glossaryItems) {
     activeCard = card;
   };
 
+  const toggleTerm = (trigger) => {
+    const entry = entryMap.get(trigger.dataset.termId || "");
+    if (!entry) return;
+    if (activeTrigger === trigger) {
+      closePopover();
+    } else {
+      openPopover(trigger, entry);
+    }
+  };
+
   markdownContainer.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
 
@@ -1331,17 +1378,16 @@ function wireGlossaryPopovers(glossaryItems) {
     }
 
     const trigger = event.target.closest(".term-trigger");
-    if (!trigger || !(trigger instanceof HTMLButtonElement)) return;
+    if (!(trigger instanceof HTMLElement)) return;
+    toggleTerm(trigger);
+  });
 
-    const termId = trigger.dataset.termId || "";
-    const entry = entryMap.get(termId);
-    if (!entry) return;
-
-    if (activeTrigger === trigger) {
-      closePopover();
-    } else {
-      openPopover(trigger, entry);
-    }
+  // 用語は span なので、Enter と Space でも開閉できるようにする。
+  markdownContainer.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (!(event.target instanceof HTMLElement) || !event.target.classList.contains("term-trigger")) return;
+    event.preventDefault();
+    toggleTerm(event.target);
   });
 
   document.addEventListener("click", (event) => {
@@ -2808,6 +2854,7 @@ async function init() {
   fullRoot.innerHTML = sanitizeGeneratedHtml(simpleMarkdownToHtml(normalizeSource(markdown)));
   requestAnimationFrame(() => {
     prepareHeadingMetadata(fullRoot);
+    fullRoot.querySelectorAll("h3").forEach((heading) => keepDatesTogether(heading));
     addBackToTocLinks(fullRoot);
     enhanceSections(fullRoot);
     enhanceSpoilerFolds(fullRoot);
