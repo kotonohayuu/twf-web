@@ -2127,10 +2127,11 @@ html {
     inset: -8px -4px;
   }
 
+  /* × は左へは広げない（すぐ左の「次へ」を押したつもりで、検索を閉じてしまわないように） */
   .search-toolbar__close::after {
     content: "";
     position: absolute;
-    inset: -8px;
+    inset: -10px -10px -10px -2px;
   }
 
   .term-card__close::after {
@@ -2140,9 +2141,22 @@ html {
   }
 }
 
-/* 件数表示で、幅だけを取っておく文字（app.js）：見えなくする */
-.status__reserved {
-  visibility: hidden;
+/* 件数表示を1行に固定するとき（app.js）：入りきらなければ、検索した語のほうを「…」で詰める */
+.status.status--one-line {
+  display: flex;
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
+
+.status--one-line .status__keyword {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status--one-line .status__count {
+  flex: none;
 }
 
 /* 横向きのスマホのような低い画面：親ページの検索バーを張り付けず、結果へ移るときは現在地バーの下に出す */
@@ -2188,7 +2202,6 @@ html {
   .search-toolbar .status {
     flex: 1 1 100%;
     font-size: 0.88rem;
-    font-variant-numeric: tabular-nums;
   }
 
   /* 前へ／次へがないとき（親ページ、この章に一致がないとき）は、× を件数表示と同じ行に置く */

@@ -1436,12 +1436,15 @@ function wireGlossaryPopovers(glossaryItems) {
   };
 
   // スマホでは、画面下部のカードが押した用語に重ならないようにする。
+  // 用語はカードの少し上（40px）まで上げる（少し指が動いただけで、用語がカードの裏に入って閉じないように）。
   const keepTriggerVisible = (trigger, card) => {
     if (!window.matchMedia("(max-width: 640px)").matches) return;
     const cardTop = card.getBoundingClientRect().top;
     const triggerBottom = trigger.getBoundingClientRect().bottom;
-    if (triggerBottom > cardTop - 8) {
-      window.scrollBy({ top: triggerBottom - cardTop + 16, behavior: "smooth" });
+    if (triggerBottom > cardTop - 24) {
+      // 見出しや検索の位置合わせ直しが、このスクロールを戻さないようにする（キーボードで開いたときのため）。
+      window.dispatchEvent(new Event("twf:own-scroll"));
+      window.scrollBy({ top: triggerBottom - cardTop + 40, behavior: "smooth" });
     }
   };
 
@@ -2204,18 +2207,6 @@ function wireSearch(glossaryItems = []) {
     targetFoldSummary = summary;
     targetFoldSummary?.classList.add("is-search-target");
   };
-  // 印を付けた箇所を利用者が開いたら、印と件数表示の注記を外す（閉じ直しても印が戻らないように）。
-  document.addEventListener(
-    "toggle",
-    (event) => {
-      const fold = event.target;
-      if (!targetFoldSummary || !(fold instanceof HTMLDetailsElement) || !fold.open) return;
-      if (!fold.contains(targetFoldSummary)) return;
-      markFoldTarget(null);
-      if (currentKeyword) updateSearchUi(currentKeyword);
-    },
-    true
-  );
 
   const syncActiveResultRow = () => {
     if (!searchResultsList) return;
@@ -2245,6 +2236,7 @@ function wireSearch(glossaryItems = []) {
   // 画面を押したときもやめる（用語カードを開いたときなどのスクロールを、合わせ直しで戻さないように）。
   // 「次へ」などのボタンは、押したあとのクリックで改めて合わせ直しを始める。
   window.addEventListener("pointerdown", cancelScrollGuard, { passive: true, capture: true });
+  window.addEventListener("twf:own-scroll", cancelScrollGuard);
   window.addEventListener("keydown", (event) => {
     if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
       cancelScrollGuard();
@@ -2407,7 +2399,7 @@ function wireSearch(glossaryItems = []) {
   const updateSearchUi = (keyword) => {
     if (!keyword) {
       summaryStatus.textContent = "";
-      summaryStatus.classList.remove("error");
+      summaryStatus.classList.remove("error", "status--one-line");
       if (searchNav) searchNav.hidden = true;
       if (searchCloseButton) searchCloseButton.hidden = true;
       if (searchToolbar) searchToolbar.classList.remove("is-active");
@@ -2422,6 +2414,7 @@ function wireSearch(glossaryItems = []) {
     const total = currentMatches.length;
     if (total === 0) {
       summaryStatus.textContent = `${lead}0件`;
+      summaryStatus.classList.remove("status--one-line");
       summaryStatus.classList.add("error");
       if (searchNav) searchNav.hidden = true;
       if (searchCloseButton) searchCloseButton.hidden = false;
@@ -2433,8 +2426,7 @@ function wireSearch(glossaryItems = []) {
     // 親ページは一覧から各章へ移る。章ページは「前へ／次へ」でその章の中を移り、ほかの章へは一覧から移る。
     const local = localMatchIndexes();
     let countLabel;
-    let countPrefix = "";
-    let padDigits = 0;
+    let oneLine = false;
     if (!IS_CHAPTER_PAGE) {
       countLabel = `${total}件（一覧から各章へ移動できる）`;
     } else if (local.length === 0) {
@@ -2444,36 +2436,25 @@ function wireSearch(glossaryItems = []) {
     } else {
       const position = local.indexOf(activeMatchIndex);
       const here = position >= 0 ? `${position + 1} / ${local.length}件` : `${local.length}件`;
-      if (narrow) {
-        // 狭い画面では、今の番号の桁を全体の件数の桁にそろえる（9件目→10件目で行が折り返さないように）。
-        countPrefix = "この章 ";
-        countLabel = here;
-        if (position >= 0) padDigits = String(local.length).length - String(position + 1).length;
-      } else {
-        countLabel = `この章 ${here}（全体 ${total}件）`;
-      }
+      countLabel = narrow ? `この章 ${here}` : `この章 ${here}（全体 ${total}件）`;
+      // 狭い画面で「前へ／次へ」で移るあいだは、件数表示を1行に固定する（バーの高さが変わらないように）。
+      oneLine = narrow;
     }
-    // 見えないが幅だけを取る文字（読み上げもしない）。
-    const appendReserved = (text) => {
-      const span = document.createElement("span");
-      span.className = "status__reserved";
-      span.setAttribute("aria-hidden", "true");
-      span.textContent = text;
-      summaryStatus.append(span);
-    };
     const activeMark = activeMatchIndex >= 0 ? currentMatches[activeMatchIndex] : null;
-    const isInClosedFold = (mark) => Boolean(mark?.closest("details.spoiler-fold:not([open])"));
-    const inClosedFold = isInClosedFold(activeMark);
-    summaryStatus.textContent = `${lead}${countPrefix}`;
-    if (padDigits > 0) appendReserved("0".repeat(padDigits));
-    summaryStatus.append(countLabel);
-    // 狭い画面では、この章に畳まれた箇所の一致が1つでもあれば、注記の幅をいつも取っておく
-    // （「次へ」で注記が付いたり消えたりして、件数表示の行数とバーの高さが変わらないように）。
-    const foldNote = narrow ? "（畳まれた箇所）" : "（畳まれた箇所の中）";
-    if (inClosedFold) {
-      summaryStatus.append(foldNote);
-    } else if (narrow && local.some((index) => isInClosedFold(currentMatches[index]))) {
-      appendReserved(foldNote);
+    const inClosedFold = Boolean(activeMark?.closest("details.spoiler-fold:not([open])"));
+    const foldNote = inClosedFold ? (narrow ? "（畳まれた箇所）" : "（畳まれた箇所の中）") : "";
+    summaryStatus.classList.toggle("status--one-line", oneLine);
+    if (oneLine) {
+      // 入りきらないときは、検索した語のほうを「…」で詰め、件数と注記は必ず見せる。
+      const keywordPart = document.createElement("span");
+      keywordPart.className = "status__keyword";
+      keywordPart.textContent = keyword;
+      const countPart = document.createElement("span");
+      countPart.className = "status__count";
+      countPart.textContent = `${countLabel}${foldNote}`;
+      summaryStatus.replaceChildren("「", keywordPart, "」", countPart);
+    } else {
+      summaryStatus.textContent = `${lead}${countLabel}${foldNote}`;
     }
     summaryStatus.classList.remove("error");
     if (searchNav) searchNav.hidden = local.length === 0;
@@ -3132,6 +3113,7 @@ const cancelHeadingHold = () => {
 window.addEventListener("wheel", cancelHeadingHold, { passive: true });
 window.addEventListener("touchmove", cancelHeadingHold, { passive: true });
 window.addEventListener("pointerdown", cancelHeadingHold, { passive: true, capture: true });
+window.addEventListener("twf:own-scroll", cancelHeadingHold);
 window.addEventListener("keydown", (event) => {
   if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
     cancelHeadingHold();
