@@ -1898,3 +1898,184 @@ html {
 .footer__credit a {
   white-space: nowrap;
 }
+
+/* ===== スマホ表示：レイアウト ===== */
+/* 章末：本文の横線のすぐ後に「目次へ戻る」の点線が続き、線が2本並ぶのを防ぐ */
+.markdown-body hr + .back-to-toc {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* 閉じた目次の箱：題名の帯の下に空く帯をなくす */
+.sidebar:has(#tocNav[hidden]) .sidebar__header {
+  margin-bottom: -8px;
+}
+
+@media (max-width: 960px) {
+  /* 章ページの上部：現在地バーのすぐ下に太い青帯が重ならないよう、帯を細くする */
+  .hero--compact {
+    background: linear-gradient(180deg, #1f5dc4 0 8px, var(--bow) 8px 10px, #102039 10px 100%);
+  }
+}
+
+@media (max-width: 640px) {
+  /* 上部：画像が赤い線に重ならないよう下げ、画像を小さくする（トップと404） */
+  .hero__content {
+    padding: 42px 10px 22px;
+  }
+
+  .hero__visual {
+    max-width: 240px;
+  }
+
+  .hero--compact .hero__content {
+    padding: 22px 10px 16px;
+  }
+
+  /* 検索：入力欄と「検索」「クリア」を1行に並べる（検索候補の一覧がボタンを覆わない） */
+  .hero__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px;
+  }
+
+  .hero__actions > button {
+    width: auto;
+    padding: 10px 12px;
+  }
+
+  /* 本文の幅：外側と内側の余白を少し詰める */
+  .layout {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .quick-guide,
+  .timeline,
+  .chapter-index,
+  .markdown-body,
+  .sidebar {
+    padding: 14px 12px;
+  }
+
+  .h3-section {
+    padding-left: 10px;
+  }
+
+  .callout {
+    padding: 12px;
+  }
+
+  /* トップのクイックガイド：囲みの中の箱をやめ、見出しの線だけで区切る */
+  .guide-card {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .guide-grid {
+    gap: 18px;
+  }
+
+  /* 見出し：大きすぎる文字と広すぎる行間を詰める */
+  .quick-guide h2,
+  .timeline h2,
+  .chapter-index h2,
+  .markdown-body h2 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+
+  /* 区分ラベル：3個と1個に分かれず、2個ずつ並べる */
+  .sec-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .sec-legend .sec-badge {
+    text-align: center;
+  }
+
+  /* 縦長の画像が画面の大半を占めないよう、高さの上限を下げる（図解は対象外） */
+  .wiki-image {
+    max-height: 300px;
+  }
+
+  /* 図解：文字が小さくなりすぎないよう、囲みの余白まで広げて表示する */
+  .wiki-figure:has(> .wiki-image[src*="/diagram_"]) {
+    margin-inline: -12px;
+    padding: 6px;
+  }
+
+  /* 主要年表：日付の列をそろえ、折り返した行が日付の下に回り込まないようにする */
+  .timeline ol {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .timeline li {
+    display: grid;
+    grid-template-columns: 6.4em minmax(0, 1fr);
+    column-gap: 6px;
+  }
+
+  .timeline span {
+    min-width: 0;
+  }
+
+  /* 章の一覧カード：画像を小さくして、題名の欄を広げる */
+  .chapter-list a {
+    gap: 10px;
+  }
+
+  .tape-card__thumb {
+    flex-basis: 88px;
+    height: 66px;
+  }
+
+  .tape-card__meta {
+    font-size: 0.8rem;
+  }
+
+  /* 次の章へのリンク：1列に積むときは左寄せにそろえる */
+  .chapter-nav__link--next {
+    text-align: left;
+  }
+
+  .chapter-nav__link--next .chapter-nav__label {
+    text-align: right;
+  }
+
+  /* 押せる範囲を広げる（見た目は変えない） */
+  .footer__top {
+    display: inline-block;
+    padding: 12px 4px;
+    margin: -12px 0 -12px 12px;
+  }
+
+  .chapter-nav__home {
+    padding: 9px 4px;
+  }
+}
+
+@media (max-width: 400px) {
+  /* とても狭い画面：章カードの矢印を外して題名の欄に回す */
+  .chapter-list a::after {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  /* 現在地バーの「目次」ボタン：見た目はそのまま、押せる範囲だけ広げる */
+  .reading-bar__toggle {
+    position: relative;
+  }
+
+  .reading-bar__toggle::after {
+    content: "";
+    position: absolute;
+    inset: -6px -8px;
+  }
+}
