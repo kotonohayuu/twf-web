@@ -284,7 +284,7 @@ input[type="search"] {
 .search-suggest__keyword {
   font-weight: 600;
   color: var(--text);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .search-suggest__btn:hover .search-suggest__keyword,
@@ -842,7 +842,9 @@ button:active {
 }
 
 .status {
+  min-width: 0;
   min-height: 1.4em;
+  overflow-wrap: anywhere;
   color: var(--accent);
   margin: 0;
 }

@@ -1783,6 +1783,7 @@ function wireBackToTocLinks() {
       tocToggleButton.setAttribute("aria-expanded", "true");
       tocToggleButton.textContent = "目次を閉じる";
     }
+    tocNav?.focus({ preventScroll: true });
     (layoutContainer ?? tocSidebar).scrollIntoView({ behavior: "smooth", block: "start" });
   });
 }
@@ -1865,11 +1866,27 @@ function buildKeywordRegex(keyword) {
     const { year, month, day } = dateParts;
     const mPat = month < 10 ? `0?${month}` : String(month);
     const dPat = day < 10 ? `0?${day}` : String(day);
-    const pattern = `(?:${year}年${mPat}月${dPat}日|(?<!\\d)${year}[\\/-]${mPat}[\\/-]${dPat}(?!\\d)|(?<!\\d)${mPat}\\/${dPat}\\/${year}(?!\\d))`;
+    const numericDate = `${year}[/-]${mPat}[/-]${dPat}|${mPat}/${dPat}/${year}`;
+    const pattern = `${year}年${mPat}月${dPat}日|(${numericDate})(?!\\d)`;
     return new RegExp(pattern, "gi");
   }
 
   return new RegExp(escapeRegExp(trimmed), "gi");
+}
+
+function findKeywordMatches(text, regex) {
+  const matches = [];
+  regex.lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    // 数字表記の日付だけは直前の数字も確認する（後読み非対応のブラウザーでも動く）。
+    if (match[1] && /\d/.test(text.charAt(match.index - 1))) {
+      regex.lastIndex = match.index + 1;
+      continue;
+    }
+    matches.push(match);
+  }
+  return matches;
 }
 
 function isMarkOnThisPage(mark) {
@@ -1895,7 +1912,7 @@ function highlightKeyword(keyword) {
 
   searchGroups().forEach((group) => {
     collectSearchTextRuns(group.root).forEach((run) => {
-      const matches = Array.from(run.text.matchAll(regex), (match) => ({
+      const matches = findKeywordMatches(run.text, regex).map((match) => ({
         start: match.index,
         end: match.index + match[0].length,
         marks: []
@@ -1930,7 +1947,6 @@ function highlightKeyword(keyword) {
     });
   });
 
-  createdMarks.forEach((mark) => ensureSectionExpandedFor(mark));
   return createdMarks;
 }
 
@@ -2043,8 +2059,7 @@ function countKeywordInCorpus(corpus, keyword) {
   if (!corpus || !keyword) return 0;
   const regex = buildKeywordRegex(keyword);
   if (!regex) return 0;
-  const matches = corpus.match(regex);
-  return matches ? matches.length : 0;
+  return findKeywordMatches(corpus, regex).length;
 }
 
 const STARTER_SUGGESTIONS = [
@@ -2999,15 +3014,11 @@ function syncSpoilerFoldsToggleUi() {
   if (!spoilerFoldsToggle) return;
   spoilerFoldsToggle.setAttribute("aria-pressed", String(forwardSpoilersOpen));
   spoilerFoldsToggle.textContent = forwardSpoilersOpen
-    ? "先の内容に触れる箇所を畳む"
-    : "先の内容に触れる箇所をすべて開く";
+    ? "先の内容を隠す（全章）"
+    : "先の内容を表示する（全章）";
 }
 
 function wireSpoilerFolds() {
-  if (spoilerFoldsToggle && markdownContainer) {
-    const hasSpoilers = Boolean(markdownContainer.querySelector("details.spoiler-fold"));
-    spoilerFoldsToggle.hidden = !hasSpoilers;
-  }
   syncSpoilerFoldsToggleUi();
   spoilerFoldsToggle?.addEventListener("click", () => {
     forwardSpoilersOpen = !forwardSpoilersOpen;
