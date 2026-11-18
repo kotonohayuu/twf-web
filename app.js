@@ -1856,9 +1856,16 @@ function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// 候補・件数・本文で同じ表記として照合する。本文に表示する文字は変更しない。
+function normalizeSearchText(text) {
+  return text.normalize("NFKC")
+    .replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
+    .toLowerCase();
+}
+
 // 「1974/05/02」「1974年5月2日」「05/02/1974」のような日付検索では、表記ゆれもまとめて一致させる。
 function buildKeywordRegex(keyword) {
-  const trimmed = String(keyword ?? "").trim();
+  const trimmed = normalizeSearchText(String(keyword ?? "").trim());
   if (!trimmed) return null;
   const ymd = trimmed.match(/^(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})日?$/);
   const mdy = !ymd ? trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/) : null;
@@ -1901,6 +1908,46 @@ function findKeywordMatches(text, regex) {
   return matches;
 }
 
+const searchSegmenter = typeof Intl.Segmenter === "function"
+  ? new Intl.Segmenter("ja", { granularity: "grapheme" })
+  : null;
+
+function findOriginalMatchRanges(text, regex) {
+  const normalized = normalizeSearchText(text);
+  const matches = findKeywordMatches(normalized, regex);
+  if (matches.length === 0) return [];
+
+  // 例：半角の「ﾎﾞ」は照合時に1文字になる。正規化前の本文を切り出すための位置を記録する。
+  const starts = [];
+  const ends = [];
+  if (text.normalize("NFKC") !== text || text.toLowerCase().length !== text.length) {
+    const segments = searchSegmenter?.segment(text) ?? text.matchAll(/.[\p{M}\uFF9E\uFF9F]*/gsu);
+    for (const part of segments) {
+      const original = part.segment ?? part[0];
+      const length = normalizeSearchText(original).length;
+      for (let i = 0; i < length; i++) {
+        starts.push(part.index + (length === original.length ? i : 0));
+        ends.push(part.index + (length === original.length ? i + 1 : original.length));
+      }
+    }
+  }
+
+  const ranges = [];
+  for (const match of matches) {
+    const from = match.index;
+    const to = from + match[0].length;
+    const start = starts[from] ?? from;
+    const end = ends[to - 1] ?? to;
+    const previous = ranges[ranges.length - 1];
+    if (previous && start < previous.end) {
+      previous.end = Math.max(previous.end, end);
+    } else {
+      ranges.push({ start, end, marks: [] });
+    }
+  }
+  return ranges;
+}
+
 function isMarkOnThisPage(mark) {
   return Boolean(markdownContainer && markdownContainer.contains(mark));
 }
@@ -1917,18 +1964,13 @@ function clearHighlights() {
 }
 
 function highlightKeyword(keyword) {
-  clearHighlights();
   const regex = buildKeywordRegex(keyword);
   if (!regex) return [];
   const createdMarks = [];
 
   searchGroups().forEach((group) => {
     collectSearchTextRuns(group.root).forEach((run) => {
-      const matches = findKeywordMatches(run.text, regex).map((match) => ({
-        start: match.index,
-        end: match.index + match[0].length,
-        marks: []
-      }));
+      const matches = findOriginalMatchRanges(run.text, regex);
       if (matches.length === 0) return;
 
       run.nodes.forEach(({ node, start, end }) => {
@@ -2049,22 +2091,13 @@ function writeSearchHistory(list) {
   }
 }
 
-// 検索候補の絞り込み用（大文字小文字・全角半角・ひらがなカタカナの違いを吸収する）。
-function normalizeForSuggest(text) {
-  return String(text ?? "")
-    .trim()
-    .normalize("NFKC")
-    .replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60))
-    .toLowerCase();
-}
-
 // 本文中の検索対象テキストを集め、候補ごとの一致件数を高速に数えられるようにする。
 function collectSearchCorpus() {
   const chunks = [];
   searchGroups().forEach((group) => {
     collectSearchTextRuns(group.root).forEach((run) => chunks.push(run.text));
   });
-  return chunks.join("\0");
+  return normalizeSearchText(chunks.join("\0"));
 }
 
 function countKeywordInCorpus(corpus, keyword) {
@@ -2121,8 +2154,8 @@ function buildSearchCandidates(glossaryItems, corpus) {
       entryId,
       isStarter,
       count,
-      normKeyword: normalizeForSuggest(trimmed),
-      normMeta: normalizeForSuggest(effectiveMeta)
+      normKeyword: normalizeSearchText(trimmed),
+      normMeta: normalizeSearchText(effectiveMeta)
     });
   };
 
@@ -2142,7 +2175,7 @@ function buildSearchCandidates(glossaryItems, corpus) {
   return candidates;
 }
 
-function wireSearch(glossaryItems = []) {
+function wireSearch(glossaryReady) {
   if (!searchInput || !searchButton || !clearSearchButton || !summaryStatus) return;
   let inputDebounceTimer = null;
   let currentKeyword = "";
@@ -2150,7 +2183,7 @@ function wireSearch(glossaryItems = []) {
   let activeMatchIndex = -1;
   let searchHistory = readSearchHistory();
   const searchCorpus = collectSearchCorpus();
-  const searchCandidates = buildSearchCandidates(glossaryItems, searchCorpus);
+  let searchCandidates = buildSearchCandidates([], searchCorpus);
 
   // 狭い画面と、横向きのスマホのような低い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
   const narrowQuery = window.matchMedia("(max-width: 640px)");
@@ -2507,6 +2540,12 @@ function wireSearch(glossaryItems = []) {
     window.location.href = `${chapterUrl(group)}?${params.toString()}`;
   };
 
+  const focusSearchResult = (mark) => {
+    const control = mark.closest("a[href], button, .term-trigger");
+    if (!control) mark.tabIndex = -1;
+    (control || mark).focus({ preventScroll: true });
+  };
+
   const focusMatch = (index, { reveal = false } = {}) => {
     if (currentMatches.length === 0) return;
     const total = currentMatches.length;
@@ -2524,6 +2563,7 @@ function wireSearch(glossaryItems = []) {
     if (reveal) {
       revealSpoilerFoldFor(target);
       refreshMaskedRows();
+      focusSearchResult(target);
     }
     marksForMatch(target).forEach((mark) => mark.classList.add("is-active"));
     updateSearchUi(currentKeyword);
@@ -2576,6 +2616,7 @@ function wireSearch(glossaryItems = []) {
 
     currentKeyword = keyword;
     markFoldTarget(null);
+    clearHighlights();
     currentMatches = highlightKeyword(keyword);
     activeMatchIndex = -1;
     renderResultList();
@@ -2609,6 +2650,7 @@ function wireSearch(glossaryItems = []) {
   searchInput.setAttribute("aria-controls", "searchSuggestPanel");
 
   let suggestOpen = false;
+  let waitingForCandidates = false;
   let highlightedSuggestIndex = -1;
   let visibleSuggestButtons = [];
   let suppressNextFocusOpen = false;
@@ -2636,9 +2678,9 @@ function wireSearch(glossaryItems = []) {
   };
 
   const getFilteredSuggestions = (rawQuery) => {
-    const normQ = normalizeForSuggest(rawQuery);
+    const normQ = normalizeSearchText(rawQuery);
     const matchingHistory = normQ
-      ? searchHistory.filter((item) => normalizeForSuggest(item).includes(normQ))
+      ? searchHistory.filter((item) => normalizeSearchText(item).includes(normQ))
       : searchHistory.slice();
 
     const historyKeys = new Set(matchingHistory.map((item) => item.toLowerCase()));
@@ -2687,6 +2729,7 @@ function wireSearch(glossaryItems = []) {
   };
 
   const closeSuggestPanel = () => {
+    waitingForCandidates = false;
     if (!suggestOpen && suggestPanel.hidden) return;
     suggestOpen = false;
     suggestPanel.hidden = true;
@@ -2704,6 +2747,7 @@ function wireSearch(glossaryItems = []) {
   };
 
   const renderSuggestPanel = () => {
+    waitingForCandidates = false;
     const rawQuery = searchInput.value.trim();
     const { matchingHistory, matchingCandidates } = getFilteredSuggestions(rawQuery);
     suggestPanel.textContent = "";
@@ -2712,6 +2756,7 @@ function wireSearch(glossaryItems = []) {
 
     if (matchingHistory.length === 0 && matchingCandidates.length === 0) {
       closeSuggestPanel();
+      waitingForCandidates = true;
       return;
     }
 
@@ -2880,7 +2925,7 @@ function wireSearch(glossaryItems = []) {
       syncSuggestHighlight();
       return;
     }
-    if (event.key === "Escape" && suggestOpen) {
+    if (event.key === "Escape" && (suggestOpen || waitingForCandidates)) {
       event.preventDefault();
       closeSuggestPanel();
       return;
@@ -2990,6 +3035,32 @@ function wireSearch(glossaryItems = []) {
     true
   );
   onSpoilerFoldsChanged = resyncAfterFoldChange;
+
+  // 本文と検索は用語集を待たない。後着した用語のリンクを作る間だけ検索マークを外し、
+  // 読者が選んだ箇所とフォーカスを、同じ本文の一致箇所へ引き継ぐ。
+  glossaryReady.then((items) => {
+    if (items.length === 0) return;
+    checkGlossaryStages(items);
+    if (markdownContainer) {
+      const previous = currentMatches[activeMatchIndex];
+      const wasFocused = previous && document.activeElement === previous;
+      if (currentMatches.length > 0) clearHighlights();
+      enhanceGlossaryTerms(items, markdownContainer);
+      wireGlossaryPopovers(items);
+      if (currentMatches.length > 0) {
+        currentMatches = highlightKeyword(currentKeyword);
+        const active = currentMatches[activeMatchIndex];
+        if (active) {
+          marksForMatch(active).forEach((mark) => mark.classList.add("is-active"));
+          if (wasFocused) focusSearchResult(active);
+        }
+      }
+    }
+    searchCandidates = buildSearchCandidates(items, searchCorpus);
+    if ((suggestOpen || waitingForCandidates) && highlightedSuggestIndex < 0 && document.activeElement === searchInput) {
+      renderSuggestPanel();
+    }
+  });
 
   // ほかのページの一覧から移ってきたとき（?q=語&n=番号）：同じ語を検索し、この章の n 番目の一致箇所へ移動する。
   const params = new URLSearchParams(window.location.search);
@@ -3188,33 +3259,21 @@ async function init() {
   wireSearchPlaceholder();
   wireGuideSpoiler();
 
+  const glossaryReady = fetch("/glossary.json", { cache: "no-store" })
+    .then((response) => response.ok ? response.json() : [])
+    .then((items) => Array.isArray(items) ? items : [])
+    .catch(() => []);
+
   let markdown = FALLBACK_NOTE;
   let loadedFromFile = false;
-  let glossaryItems = [];
-
-  const [noteResult, glossaryResult] = await Promise.allSettled([
-    fetch("/note.md", { cache: "no-store" }),
-    fetch("/glossary.json", { cache: "no-store" })
-  ]);
-
-  if (noteResult.status === "fulfilled" && noteResult.value.ok) {
-    try {
-      markdown = await noteResult.value.text();
+  try {
+    const response = await fetch("/note.md", { cache: "no-store" });
+    if (response.ok) {
+      markdown = await response.text();
       loadedFromFile = true;
-    } catch (_error) {
-      loadedFromFile = false;
     }
-  }
-
-  if (glossaryResult.status === "fulfilled" && glossaryResult.value.ok) {
-    try {
-      const parsed = await glossaryResult.value.json();
-      if (Array.isArray(parsed)) {
-        glossaryItems = parsed;
-      }
-    } catch (_error) {
-      glossaryItems = [];
-    }
+  } catch (_error) {
+    // 読み込めなかった場合は案内文を表示する。
   }
 
   // note.md 全体を、画面に出さない入れ物の中で組み立ててから、章ごとに分ける。
@@ -3227,8 +3286,6 @@ async function init() {
     addBackToTocLinks(fullRoot);
     enhanceSections(fullRoot);
     enhanceSpoilerFolds(fullRoot);
-    checkGlossaryStages(glossaryItems);
-    enhanceGlossaryTerms(glossaryItems, fullRoot);
     chapterGroups = splitIntoChapters(fullRoot);
     if (IS_CHAPTER_PAGE) {
       mountCurrentChapter({ useFirst: !loadedFromFile });
@@ -3243,11 +3300,10 @@ async function init() {
     renderChapterNav();
     wireSectionFolding();
     wireSpoilerFolds();
-    wireGlossaryPopovers(glossaryItems);
     wireTocToggle();
     wireBackToTocLinks();
     wireActiveHeadingTracker();
-    const movedToMatch = wireSearch(glossaryItems);
+    const movedToMatch = wireSearch(glossaryReady);
     window.addEventListener("hashchange", scrollToLocationHash);
     if (!loadedFromFile) {
       summaryStatus.textContent = "note.md が未配置のため、案内テキストを表示中です。";
