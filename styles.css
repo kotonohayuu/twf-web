@@ -580,6 +580,15 @@ button:active {
   margin-top: 0;
 }
 
+.timeline .guide-spoiler__label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.timeline .guide-spoiler[open] > .guide-spoiler__summary {
+  margin-bottom: 16px;
+}
+
 /* 本文：後の章の内容に触れる考察・図は、開くまで見せない */
 .spoiler-fold {
   margin: 6px 0 0;
@@ -681,20 +690,183 @@ button:active {
   color: var(--text);
 }
 
-.timeline ol {
+/* 主要年表：時期ごとに区切り、左の線に沿って出来事を並べる */
+.tl {
+  display: grid;
+  gap: 24px;
+}
+
+.tl-era__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: #f3f7ff;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* 時期の札：章の一覧の番号と同じ、テープのラベルの紙 */
+.tl-era__years {
+  padding: 1px 8px;
+  border-bottom: 2px solid var(--bow);
+  background: var(--label);
+  color: #1b1b1b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.tl-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0 0 0 5px;
+  padding: 0 0 0 18px;
+  border-left: 2px solid var(--line);
+}
+
+.tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 8.4em minmax(0, 1fr);
+  align-items: start;
+  column-gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.tl-item--thumb {
+  grid-template-columns: 8.4em minmax(0, 1fr) 112px;
+}
+
+/* 線の上の印：ふつうの行は小さな輪 */
+.tl-item::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: -26px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--line-light);
+  border-radius: 50%;
+  background: var(--panel);
+}
+
+/* 要点の行：枠で囲み、印を赤い四角にする */
+.tl-item--key {
+  border-color: var(--line);
+  background: #0d121d;
+}
+
+.tl-item--key::before {
+  top: 13px;
+  left: -27px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--panel);
+  border-radius: 0;
+  background: var(--bow);
+}
+
+/* 日付の欄：日付の下に、その出来事を扱う章への入口を置く */
+.tl-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+/* 日付：ビデオの画面に焼き込まれた日付のように見せる（年の札と同じ） */
+.tl-date {
+  padding: 0 6px;
+  background: #000;
+  color: #f4f4f4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
+.tl-title {
   margin: 0;
-  padding-left: 20px;
+  color: #c8cfdb;
+  font-weight: 700;
+  line-height: 1.55;
 }
 
-.timeline li {
-  margin-bottom: 8px;
+.tl-item--key .tl-title {
+  color: #ffffff;
 }
 
-.timeline span {
+.tl-text {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.65;
+}
+
+/* 確度の札：作中で確定していない行に付ける */
+.tl-tag {
   display: inline-block;
-  min-width: 95px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px dashed var(--line-light);
+  border-radius: 2px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.5;
+  vertical-align: 2px;
+}
+
+.tl-src {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.tl-src a {
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #0d1422;
+  color: var(--accent-2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tl-src a::before {
+  content: "→ ";
+  color: var(--bow-soft);
+}
+
+.tl-src a:hover {
+  border-color: var(--accent);
   color: var(--accent);
-  font-weight: 600;
+}
+
+.tl-thumb {
+  display: block;
+  width: 112px;
+  height: 84px;
+  border: 1px solid var(--line-dark);
+  background: #000;
+  object-fit: cover;
+  filter: contrast(1.1) brightness(0.9);
 }
 
 .search-toolbar {
@@ -1820,10 +1992,6 @@ body.error-page {
     padding: 8px;
   }
 
-  .timeline span {
-    min-width: 84px;
-  }
-
   .back-to-toc {
     justify-content: stretch;
   }
@@ -1870,7 +2038,7 @@ html {
 .term-card__title,
 #tocList a > span:last-child,
 .toc-list a > span:last-child,
-.timeline li,
+.tl-title,
 .status,
 .error-page__back {
   text-wrap: balance;
@@ -2006,20 +2174,67 @@ html {
     padding: 6px;
   }
 
-  /* 主要年表：日付の列をそろえ、折り返した行が日付の下に回り込まないようにする */
-  .timeline ol {
-    padding-left: 0;
-    list-style: none;
+  /* 主要年表：日付を見出しの上に出し、画像を小さくして本文の幅を残す */
+  .tl-list {
+    margin-left: 4px;
+    padding-left: 14px;
   }
 
-  .timeline li {
-    display: grid;
-    grid-template-columns: 6.4em minmax(0, 1fr);
-    column-gap: 6px;
+  .tl-item,
+  .tl-item--thumb {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 5px;
+    padding: 7px 8px;
   }
 
-  .timeline span {
-    min-width: 0;
+  .tl-item--thumb {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    column-gap: 10px;
+  }
+
+  .tl-item::before {
+    left: -22px;
+  }
+
+  .tl-item--key::before {
+    left: -23px;
+  }
+
+  .tl-when {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    padding-top: 0;
+  }
+
+  /* 画像は日付と見出しの横にだけ置き、説明文は行の幅いっぱいに流す */
+  .tl-item--thumb .tl-body {
+    display: contents;
+  }
+
+  .tl-item--thumb .tl-when {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tl-item--thumb .tl-title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .tl-item--thumb .tl-text {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: 0;
+  }
+
+  .tl-thumb {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 76px;
+    height: 57px;
   }
 
   /* 章の一覧カード：画像を小さくして、題名の欄を広げる */
