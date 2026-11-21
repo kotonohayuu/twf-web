@@ -232,6 +232,7 @@ const SECTION_CATEGORY_BY_ID = {
   "guilty-rec2": "event",
   "guilty-rec3": "event",
   "guilty-thoughts": "analysis",
+  "souvenir-content": "event",
   "souvenir-objects": "analysis",
   "souvenir-points": "analysis",
   "souvenir-position": "supplement",
