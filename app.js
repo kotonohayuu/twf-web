@@ -1113,7 +1113,11 @@ function isValidGlossaryBoundary(text, start, alias) {
 
   if (
     alias === "Bon" &&
-    (text.startsWith("'s", end) || text.startsWith("’s", end) || text.startsWith("（灰色の存在）", end))
+    (text.startsWith("'s", end) ||
+      text.startsWith("’s", end) ||
+      text.startsWith("（灰色の存在）", end) ||
+      (prev === "「" && next === "」") ||
+      (prev === '"' && next === '"'))
   ) {
     return false;
   }
