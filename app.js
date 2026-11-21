@@ -57,6 +57,7 @@ const CHAPTERS = [
   { slug: "souvenir", prefix: "souvenir", released: "2023/09/13" },
   { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11" },
   { slug: "file4", prefix: "ファイル4", released: "2024/02/09" },
+  { slug: "lacrimosa", prefix: "Lacrimosa", released: "2024/02/09" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
@@ -254,6 +255,13 @@ const SECTION_CATEGORY_BY_ID = {
   "f4-thoughts": "analysis",
   "f4-trivia": "supplement",
   "f4-summary": "supplement",
+  "lacrimosa-desc": "supplement",
+  "lacrimosa-river": "event",
+  "lacrimosa-console": "event",
+  "lacrimosa-susan": "event",
+  "lacrimosa-banny": "event",
+  "lacrimosa-thoughts": "analysis",
+  "lacrimosa-trivia": "supplement",
   "felix-facts": "fact",
   "felix-file4-update": "fact",
   "felix-hypothesis": "analysis"
