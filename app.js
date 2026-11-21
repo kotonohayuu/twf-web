@@ -251,6 +251,7 @@ const SECTION_CATEGORY_BY_ID = {
   "f4-10": "event",
   "f4-11": "event",
   "f4-12": "event",
+  "f4-thoughts": "analysis",
   "f4-trivia": "supplement",
   "f4-summary": "supplement",
   "felix-facts": "fact",

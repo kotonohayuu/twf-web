@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="712" viewBox="0 0 400 712" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
 <title>ファイル4の場面を作中の日付順に並べ直したもの</title>
-<desc>丸数字は映像での登場順。作中の日付順では、2 チャールズのノート（1970年10月10日）、5 WALKAROUND TEST（1974年1月21日）、6 FACIAL TRACING（3月7日）、1 スクールダンス（5月2日夜）、9 ジャックがフェリックス宅へ（5月3日0時23分）、10 フェリックスの森（5月3日8時56分）、11 フェリックスの告白（5月5日）、7 Rocket事件（5月13日）、8 THE FIRST スーザン襲撃（6月30日）、12 Wonderlandの会話（7月1日1時36分）。3と4は日付が示されない。</desc>
+<desc>丸数字は映像での登場順。作中の日付順では、2 チャールズのノート（1970年10月10日）、5 WALKAROUND TEST（1974年1月21日）、6 FACIAL TRACKING（3月7日）、1 スクールダンス（5月2日夜）、9 ジャックがフェリックス宅へ（5月3日0時23分）、10 フェリックスの森（5月3日8時56分）、11 フェリックスの告白（5月5日）、7 Rocket事件（5月13日）、8 THE FIRST スーザン襲撃（6月30日）、12 Wonderlandの会話（7月1日1時36分）。3と4は日付が示されない。</desc>
 <rect x="0" y="0" width="400" height="712" rx="8" fill="#0e131e" stroke="none" stroke-width="1"/>
 <text x="12" y="24" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">映像に出てくる順</text>
 <circle cx="24" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="24" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">1</text>
@@ -41,7 +41,7 @@
 <circle cx="100" cy="208" r="4.5" fill="#68d7ff"/>
 <text x="86" y="212.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">03/07</text>
 <circle cx="128" cy="208" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="212.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">6</text>
-<text x="148" y="213" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">FACIAL TRACING（Sha）</text>
+<text x="148" y="213" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">FACIAL TRACKING（Sha）</text>
 <circle cx="100" cy="250" r="4.5" fill="#68d7ff"/>
 <text x="86" y="254.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">05/02 夜</text>
 <circle cx="128" cy="250" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="254.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">1</text>
