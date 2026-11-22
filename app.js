@@ -261,6 +261,7 @@ const SECTION_CATEGORY_BY_ID = {
   "lacrimosa-susan": "event",
   "lacrimosa-banny": "event",
   "lacrimosa-thoughts": "analysis",
+  "lacrimosa-extended": "supplement",
   "lacrimosa-trivia": "supplement",
   "felix-facts": "fact",
   "felix-file4-update": "fact",
