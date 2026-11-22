@@ -61,6 +61,7 @@ const CHAPTERS = [
   { slug: "quality-ad", prefix: "Bon's Burgers - \"Quality\" Ad (1974)", released: "2024/06/19" },
   { slug: "hotline", prefix: "Hotline", released: "2025/06/26" },
   { slug: "file5", prefix: "ファイル5", released: "2026/07/31" },
+  { slug: "my-soul", prefix: "My Soul", released: "2026/07/31" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
@@ -122,7 +123,8 @@ const STAGE_ORDER = [
   "Lacrimosa",
   "Bon's Burgers",
   "Hotline",
-  "ファイル5"
+  "ファイル5",
+  "My Soul"
 ];
 const STAGE_ALL = STAGE_ORDER.length; // 全編を見た時点
 
@@ -298,6 +300,15 @@ const SECTION_CATEGORY_BY_ID = {
   "f5-thoughts": "analysis",
   "f5-trivia": "supplement",
   "f5-summary": "fact",
+  "mysoul-desc": "supplement",
+  "mysoul-felix": "event",
+  "mysoul-sophie": "event",
+  "mysoul-journal-happy": "event",
+  "mysoul-journal-1974": "event",
+  "mysoul-cctv": "event",
+  "mysoul-1982": "event",
+  "mysoul-thoughts": "analysis",
+  "mysoul-trivia": "supplement",
   "felix-facts": "fact",
   "felix-file4-update": "fact",
   "felix-hypothesis": "analysis"
