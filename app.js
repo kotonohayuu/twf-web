@@ -404,10 +404,26 @@ function renderImage(altText, src, spoilerUntil = "") {
   }
   const spoilerAttr = spoilerUntil ? ` data-spoiler-until="${escapeHtmlAttr(spoilerUntil)}"` : "";
   // width・height は縦横比を伝えるためのもの。表示の大きさは styles.css（.wiki-image）が決める。
+  // is-pending は「まだ読み込んでいない」印。付いているあいだは、styles.css が読み込み後と同じ高さの枠を取る。
   const fileName = safeSrc.split(/[?#]/)[0].split("/").pop() || "";
   const [width, height] = IMAGE_SIZES[fileName] || DEFAULT_IMAGE_SIZE;
-  return `<figure class="wiki-figure"${spoilerAttr}><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image" width="${width}" height="${height}" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
+  return `<figure class="wiki-figure"${spoilerAttr}><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image is-pending" width="${width}" height="${height}" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
 }
+
+// 本文の画像を読み込み終えたら（読み込めなかったときも）、「まだ読み込んでいない」印を外す。
+// load・error は親へ伝わらないので、文書全体でキャプチャして拾う。
+["load", "error"].forEach((type) => {
+  document.addEventListener(
+    type,
+    (event) => {
+      const target = event.target;
+      if (target instanceof HTMLImageElement && target.classList.contains("is-pending")) {
+        target.classList.remove("is-pending");
+      }
+    },
+    true
+  );
+});
 
 function normalizeSource(raw) {
   return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
