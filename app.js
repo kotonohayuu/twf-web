@@ -395,6 +395,10 @@ const IMAGE_SIZES = {
   "felix_kranken.webp": [570, 760],
   "susan_main.webp": [600, 800],
   "diagram_f4_timeline.svg": [400, 712],
+  "diagram_f5_grief_hijack.svg": [400, 448],
+  "diagram_chain_1974.svg": [400, 452],
+  "diagram_relationships.svg": [400, 464],
+  "diagram_bon_wonderland.svg": [400, 392],
   "jack_photo.webp": [503, 632]
 };
 
