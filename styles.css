@@ -1245,6 +1245,15 @@ button:active {
   margin: 0 auto;
 }
 
+/* まだ読み込んでいない画像（app.js が is-pending を付け、読み込み後に外す）：
+   幅を本文の幅に取り、width・height 属性の縦横比と高さの上限から、読み込み後と同じ高さを先に確保する。
+   これで、画像を読み込むたびに下の本文がずれなくなる。枠線と影は、画像が出るまで見せない。 */
+.wiki-image.is-pending {
+  width: 100%;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 .wiki-figure figcaption {
   margin-top: 8px;
   font-size: 0.85rem;

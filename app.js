@@ -360,14 +360,70 @@ function formatInline(text) {
     });
 }
 
+// 本文の画像の寸法。画像を読み込む前から縦横比が分かるようにして、読み込みのたびに本文が下へずれるのを防ぐ。
+// 映像の静止画はほぼすべて 4:3（640×480 か 960×720）なので、ここに無い画像は 4:3 として扱う。
+// 4:3 以外の画像（人物の立ち絵や図解など）を足したときは、ここに「ファイル名: [幅, 高さ]」を足す。
+// 書き忘れても表示は崩れない（読み込み後は実際の縦横比で表示され、その画像のぶんだけ本文がずれる）。
+const DEFAULT_IMAGE_SIZE = [640, 480];
+const IMAGE_SIZES = {
+  "bon_prime.webp": [478, 760],
+  "jack_walten.webp": [570, 760],
+  "bon_broken.webp": [411, 676],
+  "brian_stells.webp": [339, 375],
+  "jack_missing.webp": [576, 764],
+  "banny_main.webp": [620, 760],
+  "susan_woodings.webp": [570, 760],
+  "sha_main.webp": [454, 760],
+  "rosemary_walten.webp": [570, 760],
+  "ashley_parks.webp": [283, 760],
+  "hillary_b.webp": [367, 760],
+  "kevin_w.webp": [409, 666],
+  "billy_main.webp": [439, 760],
+  "rosemary_main.webp": [600, 800],
+  "diagram_vessels.svg": [400, 660],
+  "shadow_man.webp": [1000, 860],
+  "ly_heads_sequence.webp": [940, 480],
+  "sophie_walten.webp": [237, 760],
+  "jenny_letterson.webp": [570, 760],
+  "diagram_f3_layers.svg": [400, 408],
+  "f3_banny_holly_bon_left_zoom.webp": [600, 768],
+  "f3_banny_holly_bon_right_zoom.webp": [600, 768],
+  "linda_thompson.webp": [769, 779],
+  "boozoo_broken.webp": [490, 760],
+  "charles_brook.webp": [570, 760],
+  "felix_kranken.webp": [570, 760],
+  "susan_main.webp": [600, 800],
+  "diagram_f4_timeline.svg": [400, 712],
+  "jack_photo.webp": [503, 632]
+};
+
 function renderImage(altText, src, spoilerUntil = "") {
   const safeSrc = sanitizeImageSrc(src);
   if (!safeSrc) {
     return `<p class="status error">危険な画像URLをブロックしました: <code>${escapeHtml(src)}</code></p>`;
   }
   const spoilerAttr = spoilerUntil ? ` data-spoiler-until="${escapeHtmlAttr(spoilerUntil)}"` : "";
-  return `<figure class="wiki-figure"${spoilerAttr}><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
+  // width・height は縦横比を伝えるためのもの。表示の大きさは styles.css（.wiki-image）が決める。
+  // is-pending は「まだ読み込んでいない」印。付いているあいだは、styles.css が読み込み後と同じ高さの枠を取る。
+  const fileName = safeSrc.split(/[?#]/)[0].split("/").pop() || "";
+  const [width, height] = IMAGE_SIZES[fileName] || DEFAULT_IMAGE_SIZE;
+  return `<figure class="wiki-figure"${spoilerAttr}><img src="${escapeHtmlAttr(safeSrc)}" alt="${escapeHtmlAttr(altText)}" class="wiki-image is-pending" width="${width}" height="${height}" loading="lazy"><figcaption>${escapeHtml(altText)}</figcaption></figure>`;
 }
+
+// 本文の画像を読み込み終えたら（読み込めなかったときも）、「まだ読み込んでいない」印を外す。
+// load・error は親へ伝わらないので、文書全体でキャプチャして拾う。
+["load", "error"].forEach((type) => {
+  document.addEventListener(
+    type,
+    (event) => {
+      const target = event.target;
+      if (target instanceof HTMLImageElement && target.classList.contains("is-pending")) {
+        target.classList.remove("is-pending");
+      }
+    },
+    true
+  );
+});
 
 function normalizeSource(raw) {
   return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
@@ -3405,7 +3461,7 @@ async function init() {
   wireSearchPlaceholder();
   wireGuideSpoiler();
 
-  const glossaryReady = fetch("/glossary.json", { cache: "no-store" })
+  const glossaryReady = fetch("/glossary.json", { cache: "no-cache" })
     .then((response) => response.ok ? response.json() : [])
     .then((items) => Array.isArray(items) ? items : [])
     .catch(() => []);
@@ -3413,7 +3469,7 @@ async function init() {
   let markdown = FALLBACK_NOTE;
   let loadedFromFile = false;
   try {
-    const response = await fetch("/note.md", { cache: "no-store" });
+    const response = await fetch("/note.md", { cache: "no-cache" });
     if (response.ok) {
       markdown = await response.text();
       loadedFromFile = true;
