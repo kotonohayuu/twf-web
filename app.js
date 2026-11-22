@@ -60,6 +60,7 @@ const CHAPTERS = [
   { slug: "lacrimosa", prefix: "Lacrimosa", released: "2024/02/09" },
   { slug: "quality-ad", prefix: "Bon's Burgers - \"Quality\" Ad (1974)", released: "2024/06/19" },
   { slug: "hotline", prefix: "Hotline", released: "2025/06/26" },
+  { slug: "file5", prefix: "ファイル5", released: "2026/07/31" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
@@ -117,7 +118,11 @@ const STAGE_ORDER = [
   "Guilty",
   "souvenir",
   "Spectacle",
-  "ファイル4"
+  "ファイル4",
+  "Lacrimosa",
+  "Bon's Burgers",
+  "Hotline",
+  "ファイル5"
 ];
 const STAGE_ALL = STAGE_ORDER.length; // 全編を見た時点
 
@@ -279,6 +284,20 @@ const SECTION_CATEGORY_BY_ID = {
   "hotline-camera": "event",
   "hotline-thoughts": "analysis",
   "hotline-trivia": "supplement",
+  "f5-desc": "supplement",
+  "f5-01": "event",
+  "f5-02": "event",
+  "f5-03": "event",
+  "f5-04": "event",
+  "f5-05": "event",
+  "f5-06": "event",
+  "f5-07": "event",
+  "f5-08": "event",
+  "f5-09": "event",
+  "f5-10": "event",
+  "f5-thoughts": "analysis",
+  "f5-trivia": "supplement",
+  "f5-summary": "fact",
   "felix-facts": "fact",
   "felix-file4-update": "fact",
   "felix-hypothesis": "analysis"

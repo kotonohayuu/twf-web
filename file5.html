@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="『The Walten Files』考察データベースの「ファイル5 — Faces of Grief」の章。映像の内容・確定事実・考察を整理している。" />
+    <title>ファイル5 — Faces of Grief | The Walten Files 考察データベース</title>
+    <link rel="canonical" href="https://twf-web.pages.dev/file5" />
+    <meta property="og:title" content="ファイル5 — Faces of Grief | The Walten Files 考察データベース" />
+    <meta property="og:description" content="『The Walten Files』考察データベースの「ファイル5 — Faces of Grief」の章。映像の内容・確定事実・考察を整理している。" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://twf-web.pages.dev/file5" />
+    <meta property="og:image" content="https://twf-web.pages.dev/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <!-- 章ページ：本文は app.js が note.md から「ファイル5 — Faces of Grief」の章を取り出して表示する。 -->
+  <body id="top" class="page-chapter" data-chapter="file5">
+    <div id="readingBar" class="reading-bar" role="region" aria-label="現在地">
+      <div class="reading-bar__bar">
+        <div class="reading-bar__current">
+          <span id="readingBarYear" class="year-tag" hidden></span>
+          <span id="readingBarTitle" class="reading-bar__title">ファイル5 — Faces of Grief</span>
+        </div>
+        <button
+          id="readingBarToggle"
+          class="reading-bar__toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="readingBarDrawer"
+        >
+          目次
+        </button>
+      </div>
+      <nav id="readingBarDrawer" class="reading-bar__drawer" aria-label="モバイル目次" hidden>
+        <ul id="readingBarTocList" class="toc-list"></ul>
+      </nav>
+    </div>
+
+    <header class="hero hero--compact">
+      <div class="hero__content">
+        <div class="hero__text">
+          <p class="hero__site"><a href="/">The Walten Files <span class="hero__title-part">考察データベース</span></a></p>
+          <div class="hero__actions">
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="キーワード検索（例: ソフィー, フェリックス, 1974）"
+              aria-label="キーワード検索"
+            />
+            <button id="searchButton" type="button">検索</button>
+            <button id="clearSearchButton" type="button">クリア</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside id="tocSidebar" class="sidebar" aria-label="目次">
+        <div class="sidebar__header">
+          <h2>目次</h2>
+          <button
+            id="tocToggleButton"
+            class="sidebar__toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="tocNav"
+          >
+            目次を開く
+          </button>
+        </div>
+        <nav id="tocNav" aria-label="目次" tabindex="-1">
+          <ul id="tocList"></ul>
+        </nav>
+      </aside>
+
+      <section class="content">
+        <section aria-label="本文">
+          <div class="article-controls" aria-label="表示の切り替えと区分">
+            <div class="sec-legend" aria-label="節の区分">
+              <span class="sec-badge sec-badge--event">映像で起きたこと</span>
+              <span class="sec-badge sec-badge--analysis">読み（考察・仮説）</span>
+              <span class="sec-badge sec-badge--fact">確定事実</span>
+              <span class="sec-badge sec-badge--supplement">補足・整理</span>
+            </div>
+            <button
+              id="foldEventsToggle"
+              class="fold-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              「映像で起きたこと」を畳む
+            </button>
+            <button
+              id="spoilerFoldsToggle"
+              class="fold-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              先の内容を表示する（全章）
+            </button>
+          </div>
+          <div id="searchToolbar" class="search-toolbar">
+            <div id="summaryStatus" class="status" role="status" aria-live="polite"></div>
+            <div id="searchNav" class="search-nav" hidden>
+              <button id="prevMatchButton" type="button" aria-label="前の一致箇所へ">↑ 前へ</button>
+              <button id="nextMatchButton" type="button" aria-label="次の一致箇所へ">↓ 次へ</button>
+            </div>
+            <div id="searchResults" class="search-results" hidden>
+              <button
+                id="searchResultsToggle"
+                class="search-results__toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="searchResultsList"
+              >
+                一致箇所の一覧を開く
+              </button>
+              <ol id="searchResultsList" class="search-results__list" aria-label="一致箇所の一覧" hidden></ol>
+              <p id="searchResultsNote" class="search-results__note" hidden></p>
+            </div>
+          </div>
+          <article id="markdownContainer" class="markdown-body"></article>
+        </section>
+        <nav id="chapterNav" class="chapter-nav" aria-label="前後の章"></nav>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="footer__credit">
+        原作：Martin Walls『The Walten Files』／
+        <a href="https://www.youtube.com/@thewaltenfiles/" target="_blank" rel="noopener noreferrer">公式シリーズ（YouTube）</a>
+      </p>
+      <p>
+        ※非公式ファンサイト
+        <a href="#top" class="footer__top">↑ ページ上部へ</a>
+      </p>
+    </footer>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
