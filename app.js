@@ -1928,6 +1928,53 @@ function normalizeSearchText(text) {
     .toLowerCase();
 }
 
+// 語の途中にあってもなくても、同じ語として照合する記号（中黒・アポストロフィ・ハイフンやダッシュ）。
+// 例：「ローズマリーウォルテン」で「ローズマリー・ウォルテン」、「Bon’s」「bons」で「Bon's」、「K9」で「K-9」に一致させる。
+const SEARCH_JOINERS = "'’‘ʼ`´・·‧\\-‐‑‒–—―";
+const SEARCH_JOINER_PATTERN = new RegExp(`[${SEARCH_JOINERS}]`);
+// 検索語の区切り（空白・読点・カンマ）。語句として見つからないときは、ここで分けた語をすべて含む箇所を探す。
+const SEARCH_TERM_SEPARATOR = /[\s,、]/;
+
+// 検索語を1文字ずつ並べ、文字のあいだに上の記号が入っていても一致する正規表現の本体を作る。
+// 検索語の空白は、本文の空白や記号（「ファイル1 — 会社紹介テープ」の「 — 」など）にも一致させる。
+// 数字どうしのあいだは緩めない（「71」が「07-14」の「7-1」に一致しないように）。
+function buildLooseKeywordPattern(normalizedKeyword) {
+  const parts = [];
+  let previous = "";
+  let gap = "";
+  for (const ch of normalizedKeyword) {
+    if (SEARCH_TERM_SEPARATOR.test(ch)) {
+      if (previous) gap = "space";
+      continue;
+    }
+    if (SEARCH_JOINER_PATTERN.test(ch)) {
+      if (previous && gap !== "space") gap = "joiner";
+      continue;
+    }
+    if (previous) {
+      if (gap === "space") {
+        parts.push(`[${SEARCH_JOINERS}\\s]*`);
+      } else if (/\d/.test(previous) && /\d/.test(ch)) {
+        if (gap === "joiner") parts.push(`[${SEARCH_JOINERS}]+`);
+      } else {
+        parts.push(`[${SEARCH_JOINERS}]*`);
+      }
+    }
+    parts.push(escapeRegExp(ch));
+    previous = ch;
+    gap = "";
+  }
+  return parts.join("");
+}
+
+// 検索語を、空白・読点・カンマで語に分ける（重複は除く）。
+function splitSearchTerms(keyword) {
+  const terms = normalizeSearchText(String(keyword ?? ""))
+    .split(/[\s,、]+/)
+    .filter((term) => term && buildLooseKeywordPattern(term));
+  return [...new Set(terms)];
+}
+
 // 「1974/05/02」「1974年5月2日」「05/02/1974」のような日付検索では、表記ゆれもまとめて一致させる。
 function buildKeywordRegex(keyword) {
   const trimmed = normalizeSearchText(String(keyword ?? "").trim());
@@ -1955,7 +2002,8 @@ function buildKeywordRegex(keyword) {
     return new RegExp(pattern, "gi");
   }
 
-  return new RegExp(escapeRegExp(trimmed), "gi");
+  // 記号だけの検索語（「・」など）は、そのままの文字で探す。
+  return new RegExp(buildLooseKeywordPattern(trimmed) || escapeRegExp(trimmed), "gi");
 }
 
 function findKeywordMatches(text, regex) {
@@ -2028,14 +2076,47 @@ function clearHighlights() {
   });
 }
 
+// 複数の語をすべて含む段落・箇条書き・見出しだけを対象に、それぞれの語の一致箇所を返す。
+function findAllTermsMatchRanges(text, regexes) {
+  const all = [];
+  for (const regex of regexes) {
+    const ranges = findOriginalMatchRanges(text, regex);
+    if (ranges.length === 0) return [];
+    all.push(...ranges);
+  }
+  all.sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged = [];
+  all.forEach((range) => {
+    const previous = merged[merged.length - 1];
+    if (previous && range.start < previous.end) {
+      previous.end = Math.max(previous.end, range.end);
+    } else {
+      merged.push({ start: range.start, end: range.end, marks: [] });
+    }
+  });
+  return merged;
+}
+
 function highlightKeyword(keyword) {
   const regex = buildKeywordRegex(keyword);
   if (!regex) return [];
+  const phraseMarks = highlightMatchRanges((text) => findOriginalMatchRanges(text, regex));
+  if (phraseMarks.length > 0) return phraseMarks;
+
+  // ひと続きの語句としては見つからず、空白や読点で区切ってあるとき（「ソフィー フェリックス」など）は、
+  // すべての語を含む段落・箇条書き・見出しを探す。
+  const termRegexes = splitSearchTerms(keyword).map((term) => buildKeywordRegex(term)).filter(Boolean);
+  if (termRegexes.length < 2) return phraseMarks;
+  return highlightMatchRanges((text) => findAllTermsMatchRanges(text, termRegexes));
+}
+
+// findRanges（段落などの文字列 → 一致範囲の配列）で見つけた箇所を mark で囲み、一致箇所ごとの先頭の mark を返す。
+function highlightMatchRanges(findRanges) {
   const createdMarks = [];
 
   searchGroups().forEach((group) => {
     collectSearchTextRuns(group.root).forEach((run) => {
-      const matches = findOriginalMatchRanges(run.text, regex);
+      const matches = findRanges(run.text);
       if (matches.length === 0) return;
 
       run.nodes.forEach(({ node, start, end }) => {
