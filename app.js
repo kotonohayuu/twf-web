@@ -58,6 +58,7 @@ const CHAPTERS = [
   { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11" },
   { slug: "file4", prefix: "ファイル4", released: "2024/02/09" },
   { slug: "lacrimosa", prefix: "Lacrimosa", released: "2024/02/09" },
+  { slug: "hotline", prefix: "Hotline", released: "2025/06/26" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
 
@@ -263,6 +264,14 @@ const SECTION_CATEGORY_BY_ID = {
   "lacrimosa-thoughts": "analysis",
   "lacrimosa-extended": "supplement",
   "lacrimosa-trivia": "supplement",
+  "hotline-desc": "supplement",
+  "hotline-tape": "event",
+  "hotline-footage": "event",
+  "hotline-call": "event",
+  "hotline-escape": "event",
+  "hotline-camera": "event",
+  "hotline-thoughts": "analysis",
+  "hotline-trivia": "supplement",
   "felix-facts": "fact",
   "felix-file4-update": "fact",
   "felix-hypothesis": "analysis"
