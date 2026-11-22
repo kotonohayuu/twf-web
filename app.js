@@ -58,6 +58,7 @@ const CHAPTERS = [
   { slug: "spectacle", prefix: "Spectacle", released: "2023/11/11" },
   { slug: "file4", prefix: "ファイル4", released: "2024/02/09" },
   { slug: "lacrimosa", prefix: "Lacrimosa", released: "2024/02/09" },
+  { slug: "quality-ad", prefix: "Bon's Burgers - \"Quality\" Ad (1974)", released: "2024/06/19" },
   { slug: "hotline", prefix: "Hotline", released: "2025/06/26" },
   { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
 ];
@@ -264,6 +265,12 @@ const SECTION_CATEGORY_BY_ID = {
   "lacrimosa-thoughts": "analysis",
   "lacrimosa-extended": "supplement",
   "lacrimosa-trivia": "supplement",
+  "qa-desc": "supplement",
+  "qa-intro": "event",
+  "qa-tour": "event",
+  "qa-ending": "event",
+  "qa-thoughts": "analysis",
+  "qa-trivia": "supplement",
   "hotline-desc": "supplement",
   "hotline-tape": "event",
   "hotline-footage": "event",
