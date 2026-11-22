@@ -62,7 +62,7 @@ const CHAPTERS = [
   { slug: "hotline", prefix: "Hotline", released: "2025/06/26" },
   { slug: "file5", prefix: "ファイル5", released: "2026/07/31" },
   { slug: "my-soul", prefix: "My Soul", released: "2026/07/31" },
-  { slug: "felix", prefix: "フェリックス・クランケンの行動整理", note: "総括" }
+  { slug: "felix", prefix: "シリーズ総括", note: "総括" }
 ];
 
 // note.md を章ごとに分けたもの。{ slug, title, root, def }。def は CHAPTERS の該当行。
@@ -310,7 +310,8 @@ const SECTION_CATEGORY_BY_ID = {
   "mysoul-thoughts": "analysis",
   "mysoul-trivia": "supplement",
   "felix-facts": "fact",
-  "felix-file4-update": "fact",
+  "summary-walten": "fact",
+  "summary-bon": "fact",
   "felix-hypothesis": "analysis"
 };
 
