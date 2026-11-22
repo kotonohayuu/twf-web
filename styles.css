@@ -2329,7 +2329,7 @@ html {
     overscroll-behavior: contain;
   }
 
-  /* 見た目は変えず、押せる範囲だけを広げる */
+  /* 見た目は変えず、押せる範囲だけを広げる（縦44px以上。inset は枠線の内側から測るので、枠線2pxぶん多めに取る） */
   .search-nav button,
   .search-toolbar__close,
   .search-results__toggle,
@@ -2338,17 +2338,62 @@ html {
   }
 
   .search-nav button::after,
-  .search-toolbar__close::after,
   .search-results__toggle::after {
     content: "";
     position: absolute;
-    inset: -6px -2px;
+    inset: -8px -4px;
+  }
+
+  /* × は左へは広げない（すぐ左の「次へ」を押したつもりで、検索を閉じてしまわないように） */
+  .search-toolbar__close::after {
+    content: "";
+    position: absolute;
+    inset: -10px -10px -10px -2px;
   }
 
   .term-card__close::after {
     content: "";
     position: absolute;
-    inset: -12px -8px;
+    inset: -14px -10px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* 件数表示を1行に固定するとき（app.js）：入りきらなければ、検索した語のほうを「…」で詰める（幅は app.js が決める）。
+     中身の幅で検索バーやページを押し広げないようにする */
+  .status.status--one-line {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    contain: inline-size;
+  }
+
+  .status--one-line .status__keyword {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+}
+
+/* 横向きのスマホのような低い画面：親ページの検索バーを張り付けず、結果へ移るときは現在地バーの下に出す */
+@media (max-height: 500px) {
+  .page-home .search-toolbar.is-active {
+    position: static;
+  }
+
+  .page-home .search-results__list {
+    max-height: min(60vh, 480px);
+  }
+
+  .search-toolbar {
+    scroll-margin-top: calc(var(--reading-bar-h) + 2px);
+  }
+
+  .page-home .search-toolbar {
+    scroll-margin-top: 10px;
   }
 }
 

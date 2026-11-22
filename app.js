@@ -1364,6 +1364,8 @@ function wireGlossaryPopovers(glossaryItems) {
   let activeTrigger = null;
   let activeCard = null;
   let positionFrame = 0;
+  // スマホ（画面下部のカード）：押した用語がカードの上に一度でも出たか。出たあとでカードの裏に入ったら閉じる。
+  let triggerSeenAboveCard = false;
 
   const closePopover = ({ restoreFocus = false } = {}) => {
     if (activeCard) {
@@ -1405,6 +1407,12 @@ function wireGlossaryPopovers(glossaryItems) {
     if (window.matchMedia("(max-width: 640px)").matches) {
       activeCard.style.removeProperty("left");
       activeCard.style.removeProperty("top");
+      // 上へスクロールして、用語がカードの裏に入ったら閉じる（開いた直後、用語をカードの上へ出す途中は閉じない）。
+      if (rect.top < activeCard.getBoundingClientRect().top) {
+        triggerSeenAboveCard = true;
+      } else if (triggerSeenAboveCard) {
+        closePopover();
+      }
       return;
     }
 
@@ -1487,17 +1495,21 @@ function wireGlossaryPopovers(glossaryItems) {
     trigger.setAttribute("aria-expanded", "true");
     activeTrigger = trigger;
     activeCard = card;
+    triggerSeenAboveCard = false;
     positionPopover();
     keepTriggerVisible(trigger, card);
   };
 
   // スマホでは、画面下部のカードが押した用語に重ならないようにする。
+  // 用語はカードの少し上（40px）まで上げる（少し指が動いただけで、用語がカードの裏に入って閉じないように）。
   const keepTriggerVisible = (trigger, card) => {
     if (!window.matchMedia("(max-width: 640px)").matches) return;
     const cardTop = card.getBoundingClientRect().top;
     const triggerBottom = trigger.getBoundingClientRect().bottom;
-    if (triggerBottom > cardTop - 8) {
-      window.scrollBy({ top: triggerBottom - cardTop + 16, behavior: "smooth" });
+    if (triggerBottom > cardTop - 24) {
+      // 見出しや検索の位置合わせ直しが、このスクロールを戻さないようにする（キーボードで開いたときのため）。
+      window.dispatchEvent(new Event("twf:own-scroll"));
+      window.scrollBy({ top: triggerBottom - cardTop + 40, behavior: "smooth" });
     }
   };
 
@@ -2238,9 +2250,11 @@ function wireSearch(glossaryReady) {
   const searchCorpus = collectSearchCorpus();
   let searchCandidates = buildSearchCandidates([], searchCorpus);
 
-  // 狭い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
+  // 狭い画面と、横向きのスマホのような低い画面では、一覧は閉じた状態から始める（開閉は利用者の操作を覚えておく）。
   const narrowQuery = window.matchMedia("(max-width: 640px)");
-  let resultsOpen = !narrowQuery.matches;
+  const compactQuery = window.matchMedia("(max-width: 640px), (max-height: 500px)");
+  const touchQuery = window.matchMedia("(pointer: coarse)");
+  let resultsOpen = !compactQuery.matches;
 
   // 今のページ（章）にある一致箇所の番号（currentMatches の中での位置）。
   const localMatchIndexes = () =>
@@ -2292,9 +2306,9 @@ function wireSearch(glossaryReady) {
     if (shift !== 0) window.scrollBy({ top: shift, behavior: "instant" });
   };
 
-  // 狭い画面で結果（件数と一覧）を見せるとき：検索バーの位置まで移動する。
+  // 狭い画面や低い画面で結果（件数と一覧）を見せるとき：検索バーの位置まで移動する。
   const bringResultsIntoView = () => {
-    if (!narrowQuery.matches || !searchToolbar) return;
+    if (!compactQuery.matches || !searchToolbar) return;
     searchToolbar.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
@@ -2332,6 +2346,10 @@ function wireSearch(glossaryReady) {
   };
   window.addEventListener("wheel", cancelScrollGuard, { passive: true });
   window.addEventListener("touchmove", cancelScrollGuard, { passive: true });
+  // 画面を押したときもやめる（用語カードを開いたときなどのスクロールを、合わせ直しで戻さないように）。
+  // 「次へ」などのボタンは、押したあとのクリックで改めて合わせ直しを始める。
+  window.addEventListener("pointerdown", cancelScrollGuard, { passive: true, capture: true });
+  window.addEventListener("twf:own-scroll", cancelScrollGuard);
   window.addEventListener("keydown", (event) => {
     if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
       cancelScrollGuard();
@@ -2491,10 +2509,31 @@ function wireSearch(glossaryReady) {
     controls.appendChild(searchCloseButton);
   }
 
+  // 1行に固定した件数表示が入りきらないときは、検索した語のほうを「…」で詰め、件数と注記は必ず見せる。
+  const fitStatusKeyword = () => {
+    const keywordPart = summaryStatus.querySelector(".status__keyword");
+    if (!(keywordPart instanceof HTMLElement) || !summaryStatus.classList.contains("status--one-line")) return;
+    keywordPart.style.removeProperty("max-width");
+    const overflow = summaryStatus.scrollWidth - summaryStatus.clientWidth;
+    if (overflow > 0) {
+      keywordPart.style.maxWidth = `${Math.max(keywordPart.offsetWidth - overflow - 1, 32)}px`;
+    }
+  };
+  window.addEventListener("resize", fitStatusKeyword, { passive: true });
+  // 画面の向きを変えるなどで 640px の境目をまたいだら、件数表示をその幅向けに書き直す。
+  const rewriteStatusForWidth = () => {
+    if (currentKeyword) updateSearchUi(currentKeyword);
+  };
+  if (typeof narrowQuery.addEventListener === "function") {
+    narrowQuery.addEventListener("change", rewriteStatusForWidth);
+  } else if (typeof narrowQuery.addListener === "function") {
+    narrowQuery.addListener(rewriteStatusForWidth);
+  }
+
   const updateSearchUi = (keyword) => {
     if (!keyword) {
       summaryStatus.textContent = "";
-      summaryStatus.classList.remove("error");
+      summaryStatus.classList.remove("error", "status--one-line");
       if (searchNav) searchNav.hidden = true;
       if (searchCloseButton) searchCloseButton.hidden = true;
       if (searchToolbar) searchToolbar.classList.remove("is-active");
@@ -2509,6 +2548,7 @@ function wireSearch(glossaryReady) {
     const total = currentMatches.length;
     if (total === 0) {
       summaryStatus.textContent = `${lead}0件`;
+      summaryStatus.classList.remove("status--one-line");
       summaryStatus.classList.add("error");
       if (searchNav) searchNav.hidden = true;
       if (searchCloseButton) searchCloseButton.hidden = false;
@@ -2520,6 +2560,7 @@ function wireSearch(glossaryReady) {
     // 親ページは一覧から各章へ移る。章ページは「前へ／次へ」でその章の中を移り、ほかの章へは一覧から移る。
     const local = localMatchIndexes();
     let countLabel;
+    let oneLine = false;
     if (!IS_CHAPTER_PAGE) {
       countLabel = `${total}件（一覧から各章へ移動できる）`;
     } else if (local.length === 0) {
@@ -2530,15 +2571,26 @@ function wireSearch(glossaryReady) {
       const position = local.indexOf(activeMatchIndex);
       const here = position >= 0 ? `${position + 1} / ${local.length}件` : `${local.length}件`;
       countLabel = narrow ? `この章 ${here}` : `この章 ${here}（全体 ${total}件）`;
+      // 狭い画面で「前へ／次へ」で移るあいだは、件数表示を1行に固定する（バーの高さが変わらないように）。
+      oneLine = narrow;
     }
     const activeMark = activeMatchIndex >= 0 ? currentMatches[activeMatchIndex] : null;
     const inClosedFold = Boolean(activeMark?.closest("details.spoiler-fold:not([open])"));
     const foldNote = inClosedFold ? (narrow ? "（畳まれた箇所）" : "（畳まれた箇所の中）") : "";
-    summaryStatus.textContent = `${lead}${countLabel}${foldNote}`;
+    summaryStatus.classList.toggle("status--one-line", oneLine);
+    if (oneLine) {
+      const keywordPart = document.createElement("span");
+      keywordPart.className = "status__keyword";
+      keywordPart.textContent = keyword;
+      summaryStatus.replaceChildren("「", keywordPart, `」${countLabel}${foldNote}`);
+    } else {
+      summaryStatus.textContent = `${lead}${countLabel}${foldNote}`;
+    }
     summaryStatus.classList.remove("error");
     if (searchNav) searchNav.hidden = local.length === 0;
     if (searchCloseButton) searchCloseButton.hidden = false;
     if (searchToolbar) searchToolbar.classList.add("is-active");
+    fitStatusKeyword();
     syncSearchStuck();
   };
 
@@ -2611,8 +2663,15 @@ function wireSearch(glossaryReady) {
 
   const runSearch = ({ shouldScroll, step = 1 } = { shouldScroll: false, step: 1 }) => {
     const keyword = searchInput.value.trim();
-    // 狭い画面では、検索を実行したらキーボードを閉じる（結果がキーボードに隠れないように）。
-    if (shouldScroll && keyword && narrowQuery.matches && document.activeElement === searchInput) {
+    // タッチ操作のスマホでは、検索を実行したら画面のキーボードを閉じる（結果がキーボードに隠れないように）。
+    // パソコンのキーボードでは、入力欄にとどまり、Enter を続けて押すと次の一致へ進める。
+    if (
+      shouldScroll &&
+      keyword &&
+      compactQuery.matches &&
+      touchQuery.matches &&
+      document.activeElement === searchInput
+    ) {
       searchInput.blur();
     }
     if (shouldScroll && keyword && keyword === currentKeyword && currentMatches.length > 0) {
@@ -3013,8 +3072,8 @@ function wireSearch(glossaryReady) {
     const index = Number(row.dataset.matchIndex);
     if (!Number.isInteger(index) || !currentMatches[index]) return;
     recordSearchHistory(currentKeyword);
-    // 狭い画面では一覧が本文を覆うため、行を選んだら一覧を閉じてから移動する。
-    if (narrowQuery.matches) {
+    // 狭い画面や低い画面では一覧が本文を覆うため、行を選んだら一覧を閉じてから移動する。
+    if (compactQuery.matches) {
       resultsOpen = false;
       applyResultsOpen();
     }
@@ -3025,6 +3084,11 @@ function wireSearch(glossaryReady) {
   const resyncAfterFoldChange = () => {
     if (currentMatches.length > 0) {
       refreshMaskedRows();
+      // 今の一致箇所が畳まれた箇所の中なら、その開閉ボタンに橙の印を付ける（件数表示の注記とそろえる）。
+      const activeMark = activeMatchIndex >= 0 ? currentMatches[activeMatchIndex] : null;
+      const closedFold =
+        activeMark && isMarkOnThisPage(activeMark) ? activeMark.closest("details.spoiler-fold:not([open])") : null;
+      markFoldTarget(closedFold?.querySelector(":scope > summary") ?? null);
       updateSearchUi(currentKeyword);
     }
   };
@@ -3218,6 +3282,8 @@ const cancelHeadingHold = () => {
 };
 window.addEventListener("wheel", cancelHeadingHold, { passive: true });
 window.addEventListener("touchmove", cancelHeadingHold, { passive: true });
+window.addEventListener("pointerdown", cancelHeadingHold, { passive: true, capture: true });
+window.addEventListener("twf:own-scroll", cancelHeadingHold);
 window.addEventListener("keydown", (event) => {
   if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
     cancelHeadingHold();
