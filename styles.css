@@ -1274,6 +1274,128 @@ button:active {
   padding-right: 2px;
 }
 
+/* 画像の拡大表示：押せる画像にはカーソルで示し、押すと画面いっぱいの枠（dialog）に開く */
+.wiki-image,
+.tl-thumb,
+.guide-people__avatar,
+.hero__image,
+.term-card__img {
+  cursor: zoom-in;
+}
+
+a .wiki-image,
+a .tl-thumb,
+a .guide-people__avatar,
+a .hero__image,
+button .term-card__img {
+  cursor: pointer;
+}
+
+.image-viewer {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(5, 7, 11, 0.94);
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.image-viewer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.image-viewer::backdrop {
+  background: rgba(5, 7, 11, 0.94);
+}
+
+.image-viewer__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.image-viewer__hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.image-viewer__close {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 4px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 2px solid var(--line-light);
+  border-right-color: var(--line-dark);
+  border-bottom-color: var(--line-dark);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.image-viewer__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 収まる大きさのときは中央に置き、拡大したときは左上から並べて端まで動かせるようにする */
+.image-viewer__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  cursor: zoom-out;
+}
+
+.image-viewer__stage.is-zoomed {
+  display: block;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.image-viewer__image {
+  display: block;
+  flex: 0 0 auto;
+  max-width: none;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.image-viewer__stage.is-zoomed .image-viewer__image {
+  cursor: zoom-out;
+}
+
+.image-viewer__caption {
+  flex: 0 0 auto;
+  max-height: 22vh;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+
 /* C & D. 節の区分バッジとあらすじ折りたたみ操作 */
 .article-controls {
   display: flex;

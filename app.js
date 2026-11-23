@@ -430,6 +430,190 @@ function renderImage(altText, src, spoilerUntil = "") {
   );
 });
 
+// ---- 画像の拡大表示 ----
+// 本文の画像・図解、年表の画像、人物紹介と用語カードの顔写真を押すと、画面いっぱいに開く。
+// 開いた画像をもう一度押すと2倍に拡大し（指やスクロールで動かせる）、さらに押すと元へ戻る。
+// 閉じるには「閉じる」・画像の外側・Esc・端末の「戻る」のどれでもよい。
+// リンクやボタンの中にある画像（章の一覧の画像など）は、もとの動きを優先して対象にしない。
+const IMAGE_VIEWER_TARGETS = ".wiki-image, .tl-thumb, .guide-people__avatar, .hero__image, .term-card__img";
+const IMAGE_VIEWER_ZOOM = 2;
+let imageViewer = null;
+
+// 一覧用の小さい画像（images/thumbs・images/cards）には、同じ名前の大きい画像が images/ にあることが多い。
+// あればそちらを開き、なければ小さい画像をそのまま開く。
+function fullSizeImageSrc(src) {
+  const match = /^(.*\/images\/)(?:thumbs|cards)\/([^/?#]+)$/.exec(src);
+  return match ? `${match[1]}${match[2]}` : "";
+}
+
+function buildImageViewer() {
+  const dialog = document.createElement("dialog");
+  dialog.className = "image-viewer";
+  dialog.setAttribute("aria-label", "画像の拡大表示");
+
+  const bar = document.createElement("div");
+  bar.className = "image-viewer__bar";
+  const hint = document.createElement("span");
+  hint.className = "image-viewer__hint";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "image-viewer__close";
+  closeBtn.textContent = "閉じる";
+  bar.append(hint, closeBtn);
+
+  const stage = document.createElement("div");
+  stage.className = "image-viewer__stage";
+  const img = document.createElement("img");
+  img.className = "image-viewer__image";
+  img.alt = "";
+  stage.appendChild(img);
+
+  const caption = document.createElement("p");
+  caption.className = "image-viewer__caption";
+
+  dialog.append(bar, stage, caption);
+  document.body.appendChild(dialog);
+
+  const viewer = { dialog, stage, img, caption, hint, zoomed: false, ratio: 4 / 3, naturalWidth: 0, isVector: false, pushedHistory: false };
+
+  // 画面に収まる大きさ（fit）と、その2倍（zoomed）を、縦横比から計算して当てる。
+  const layout = (anchor = null) => {
+    const stageWidth = stage.clientWidth;
+    const stageHeight = stage.clientHeight;
+    if (!stageWidth || !stageHeight) return;
+    // 小さい画像（年表用の224×168など）は、引き伸ばしすぎるとぼやけるので、もとの2.5倍までにする。図解（SVG）は制限しない。
+    const upscaleLimit = viewer.naturalWidth && !viewer.isVector ? viewer.naturalWidth * 2.5 : Infinity;
+    const fitWidth = Math.min(stageWidth, stageHeight * viewer.ratio, upscaleLimit);
+    const width = viewer.zoomed ? fitWidth * IMAGE_VIEWER_ZOOM : fitWidth;
+    img.style.width = `${Math.round(width)}px`;
+    img.style.height = `${Math.round(width / viewer.ratio)}px`;
+    stage.classList.toggle("is-zoomed", viewer.zoomed);
+    hint.textContent = viewer.zoomed ? "画像を押すと元の大きさに戻る" : "画像を押すと拡大";
+    if (viewer.zoomed && anchor) {
+      // 押した場所が、拡大したあとも同じ位置に来るように動かす
+      stage.scrollLeft = anchor.relX * img.offsetWidth - anchor.viewX;
+      stage.scrollTop = anchor.relY * img.offsetHeight - anchor.viewY;
+    } else if (!viewer.zoomed) {
+      stage.scrollLeft = 0;
+      stage.scrollTop = 0;
+    }
+  };
+  viewer.layout = layout;
+
+  img.addEventListener("load", () => {
+    if (img.naturalWidth && img.naturalHeight) {
+      viewer.ratio = img.naturalWidth / img.naturalHeight;
+      viewer.naturalWidth = img.naturalWidth;
+      viewer.isVector = /\.svg(?:[?#]|$)/i.test(img.currentSrc || img.src);
+      layout();
+    }
+  });
+  img.addEventListener("error", () => {
+    // 大きい画像がなければ、押された小さい画像をそのまま出す
+    if (viewer.fallbackSrc && img.getAttribute("src") !== viewer.fallbackSrc) {
+      img.src = viewer.fallbackSrc;
+    }
+  });
+
+  img.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const rect = img.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const anchor = {
+      relX: rect.width ? (event.clientX - rect.left) / rect.width : 0.5,
+      relY: rect.height ? (event.clientY - rect.top) / rect.height : 0.5,
+      viewX: event.clientX - stageRect.left,
+      viewY: event.clientY - stageRect.top
+    };
+    viewer.zoomed = !viewer.zoomed;
+    layout(anchor);
+  });
+
+  closeBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeImageViewer();
+  });
+  // 画像の外側（暗い部分）を押したら閉じる。開いているあいだの操作は、下のページへ伝えない。
+  dialog.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (event.target === dialog || event.target === stage || event.target === caption) closeImageViewer();
+  });
+  // Esc など、ブラウザ側で閉じられたとき
+  dialog.addEventListener("close", () => {
+    img.removeAttribute("src");
+    viewer.zoomed = false;
+    if (viewer.pushedHistory) {
+      viewer.pushedHistory = false;
+      if (window.history.state && window.history.state.imageViewer) window.history.back();
+    }
+    if (viewer.opener && document.contains(viewer.opener)) viewer.opener.focus({ preventScroll: true });
+    viewer.opener = null;
+  });
+  window.addEventListener("resize", () => {
+    if (dialog.open) layout();
+  });
+  // 端末の「戻る」で、ページを離れずに拡大表示だけを閉じる
+  window.addEventListener("popstate", () => {
+    if (dialog.open) {
+      viewer.pushedHistory = false;
+      dialog.close();
+    }
+  });
+
+  return viewer;
+}
+
+function closeImageViewer() {
+  if (imageViewer && imageViewer.dialog.open) imageViewer.dialog.close();
+}
+
+function openImageViewer(source) {
+  if (!imageViewer) imageViewer = buildImageViewer();
+  const viewer = imageViewer;
+  if (viewer.dialog.open || typeof viewer.dialog.showModal !== "function") return;
+
+  const thumbSrc = source.currentSrc || source.src;
+  const fullSrc = fullSizeImageSrc(thumbSrc);
+  const attrWidth = Number(source.getAttribute("width"));
+  const attrHeight = Number(source.getAttribute("height"));
+  if (source.naturalWidth && source.naturalHeight && !fullSrc) {
+    viewer.ratio = source.naturalWidth / source.naturalHeight;
+  } else if (attrWidth && attrHeight && !fullSrc) {
+    viewer.ratio = attrWidth / attrHeight;
+  } else {
+    viewer.ratio = 4 / 3;
+  }
+  viewer.zoomed = false;
+  viewer.naturalWidth = 0;
+  viewer.isVector = false;
+  viewer.fallbackSrc = thumbSrc;
+  viewer.opener = source;
+  viewer.img.alt = source.alt || "";
+  viewer.caption.textContent = source.alt || "";
+  viewer.caption.hidden = !source.alt;
+  viewer.img.src = fullSrc || thumbSrc;
+
+  viewer.dialog.showModal();
+  viewer.layout();
+  try {
+    window.history.pushState({ imageViewer: true }, "");
+    viewer.pushedHistory = true;
+  } catch (_error) {
+    viewer.pushedHistory = false;
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLImageElement) || !target.matches(IMAGE_VIEWER_TARGETS)) return;
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (target.closest("a, button, summary, .image-viewer")) return;
+  event.preventDefault();
+  // 用語カードの中の画像でも、カードが「外側を押された」と受け取って閉じないようにする
+  event.stopPropagation();
+  openImageViewer(target);
+}, true);
+
 function normalizeSource(raw) {
   return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
 }
