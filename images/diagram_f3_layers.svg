@@ -1,24 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="408" viewBox="0 0 400 408" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="298" viewBox="0 0 400 298" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
 <title>ファイル3の三層構造</title>
-<desc>外側から、第1層はアンソニーが入手・復元して公開しているテープ。第2層は1982年、ホテルの地下室でソフィーとジェニーがゲーム筐体をプレイする実況。第3層はゲームBunnyFarmの中身で、1974年の事件が断片的に現れる。ゲームのグリッチや語りかけが、ソフィーの記憶を呼び覚ます。</desc>
-<rect x="0" y="0" width="400" height="408" rx="8" fill="#0e131e" stroke="none" stroke-width="1"/>
-<rect x="8" y="8" width="384" height="392" rx="8" fill="#151922" stroke="#566178" stroke-width="1.5"/>
+<desc>外側から、第1層はアンソニーのテープ、第2層は1982年のホテルの地下室（ソフィー22歳とジェニー26歳）、第3層はゲーム「BunnyFarm」（スーザンの音声ログ、リンダの日記、失踪者の顔）。第3層から「グリッチ・語りかけ」の矢印が第2層の「ソフィーの記憶」へ伸びている。</desc>
+<rect x="0" y="0" width="400" height="298" rx="8" fill="#0e131e" stroke="none"/>
+<rect x="8" y="8" width="384" height="282" rx="8" fill="#151922" stroke="#566178" stroke-width="1.5"/>
 <text x="22" y="34" font-size="13" fill="#aeb7c8" font-weight="700" text-anchor="start">第1層</text>
 <text x="64" y="35" font-size="16" fill="#e8edf7" font-weight="700" text-anchor="start">アンソニーのテープ</text>
-<text x="22" y="56" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">入手した記録映像を友人と復元し、公開している</text>
-<rect x="24" y="72" width="352" height="314" rx="8" fill="#202636" stroke="#9db7ff" stroke-width="1.5"/>
-<text x="38" y="98" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="start">第2層</text>
-<text x="80" y="99" font-size="16" fill="#e8edf7" font-weight="700" text-anchor="start">1982年・ホテルの地下室</text>
-<text x="38" y="120" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">ソフィー（22）とジェニー（26）が筐体をプレイ</text>
-<rect x="40" y="136" width="320" height="118" rx="8" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/>
-<text x="54" y="162" font-size="13" fill="#68d7ff" font-weight="700" text-anchor="start">第3層</text>
-<text x="96" y="163" font-size="16" fill="#e8edf7" font-weight="700" text-anchor="start">ゲーム「BunnyFarm」</text>
-<text x="54" y="188" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">児童向けの見た目の奥に、1974年の</text>
-<text x="54" y="208" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">失踪・死亡事件が断片的に現れる</text>
-<text x="54" y="236" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">スーザンの音声ログ／リンダの日記／失踪者の顔</text>
-<line x1="120" y1="256" x2="120" y2="289" stroke="#fcd34d" stroke-width="2"/><polygon points="120,296 115,287 125,287" fill="#fcd34d"/>
-<text x="134" y="281" font-size="13" fill="#fcd34d" font-weight="700" text-anchor="start">グリッチ・語りかけ</text>
-<rect x="56" y="300" width="288" height="42" rx="6" fill="#0e131e" stroke="#fcd34d" stroke-width="1.5" stroke-dasharray="5 4"/>
-<text x="200" y="327" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="middle">ソフィーの記憶が呼び覚まされる</text>
-<text x="38" y="368" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">二人の会話と反応が、映像全体の軸になる</text>
+<rect x="24" y="52" width="352" height="224" rx="8" fill="#202636" stroke="#9db7ff" stroke-width="1.5"/>
+<text x="38" y="78" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="start">第2層</text>
+<text x="80" y="79" font-size="16" fill="#e8edf7" font-weight="700" text-anchor="start">1982年・ホテルの地下室</text>
+<text x="38" y="101" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="start">ソフィー（22）／ジェニー（26）</text>
+<rect x="40" y="116" width="320" height="66" rx="8" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/>
+<text x="54" y="142" font-size="13" fill="#68d7ff" font-weight="700" text-anchor="start">第3層</text>
+<text x="96" y="143" font-size="16" fill="#e8edf7" font-weight="700" text-anchor="start">ゲーム「BunnyFarm」</text>
+<text x="54" y="166" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">スーザンの音声ログ／リンダの日記／失踪者の顔</text>
+<line x1="120" y1="184" x2="120" y2="211" stroke="#fcd34d" stroke-width="2"/><polygon points="120,218 115,209 125,209" fill="#fcd34d"/>
+<text x="134" y="206" font-size="13" fill="#fcd34d" font-weight="700" text-anchor="start">グリッチ・語りかけ</text>
+<rect x="56" y="222" width="288" height="42" rx="6" fill="#0e131e" stroke="#fcd34d" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="200" y="248.5" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="middle">ソフィーの記憶</text>
 </svg>

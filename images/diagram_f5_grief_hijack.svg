@@ -1,45 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="448" viewBox="0 0 400 448" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
 <title>ファイル5「悲嘆の5段階」と乗っ取り</title>
-<desc>ローズマリーが否認（5月12日）・怒り（5月16日）・取引（5月21日）・抑うつ（5月5日の回想を挟み、5月22日〜7月19日）の4段階を辿ったあと、第5段階「受容（Acceptance）」のタイトルカードは現れず、代わりにボンの『FACES OF BLISS』が割り込んで殺害とシャへの詰め込みへ至る流れを示す図。</desc>
-<rect x="0" y="0" width="400" height="448" rx="8" fill="#0e131e" stroke="none"/>
-<text x="14" y="24" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">作中で示される章立て（悲嘆の5段階）</text>
-<rect x="12" y="38" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/>
-<circle cx="34" cy="60" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/>
-<text x="34" y="64.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">1</text>
-<text x="56" y="65" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Denial（否認）</text>
-<text x="376" y="64.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/12</text>
+<desc>否認（5月12日）・怒り（5月16日）・取引（5月21日）・抑うつ（5月5日の回想を挟み、5月22日〜7月19日）の4段階が続いたあと、第5段階「受容（Acceptance）」は現れず、代わりに『FACES OF BLISS』（至福の顔）が割り込む流れを示す図。</desc>
+<rect x="0" y="0" width="400" height="400" rx="8" fill="#0e131e" stroke="none"/>
+<text x="14" y="24" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">悲嘆の5段階（作中の章立て）</text>
+<rect x="12" y="38" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/><circle cx="34" cy="60" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/><text x="34" y="64.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">1</text><text x="56" y="65" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Denial（否認）</text><text x="376" y="64.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/12</text>
 <line x1="200" y1="83" x2="200" y2="91" stroke="#566178" stroke-width="2"/><polygon points="200,97 195,89 205,89" fill="#566178"/>
-<rect x="12" y="98" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/>
-<circle cx="34" cy="120" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/>
-<text x="34" y="124.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">2</text>
-<text x="56" y="125" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Anger（怒り）</text>
-<text x="376" y="124.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/16</text>
+<rect x="12" y="98" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/><circle cx="34" cy="120" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/><text x="34" y="124.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">2</text><text x="56" y="125" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Anger（怒り）</text><text x="376" y="124.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/16</text>
 <line x1="200" y1="143" x2="200" y2="151" stroke="#566178" stroke-width="2"/><polygon points="200,157 195,149 205,149" fill="#566178"/>
-<rect x="12" y="158" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/>
-<circle cx="34" cy="180" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/>
-<text x="34" y="184.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">3</text>
-<text x="56" y="185" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Bargaining（取引）</text>
-<text x="376" y="184.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/21</text>
+<rect x="12" y="158" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/><circle cx="34" cy="180" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/><text x="34" y="184.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">3</text><text x="56" y="185" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Bargaining（取引）</text><text x="376" y="184.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">5/21</text>
 <line x1="200" y1="203" x2="200" y2="211" stroke="#566178" stroke-width="2"/><polygon points="200,217 195,209 205,209" fill="#566178"/>
-<rect x="12" y="218" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/>
-<circle cx="34" cy="240" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/>
-<text x="34" y="244.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">4</text>
-<text x="56" y="245" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Depression（抑うつ）</text>
-<text x="376" y="244.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">回想5/5・5/22–7/19</text>
+<rect x="12" y="218" width="376" height="44" rx="6" fill="#151922" stroke="#3d4d70" stroke-width="1.2"/><circle cx="34" cy="240" r="12" fill="#0e131e" stroke="#9db7ff" stroke-width="1.5"/><text x="34" y="244.5" font-size="13" fill="#9db7ff" font-weight="700" text-anchor="middle">4</text><text x="56" y="245" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="start">Depression（抑うつ）</text><text x="376" y="244.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">回想5/5・5/22–7/19</text>
 <line x1="200" y1="264" x2="200" y2="278" stroke="#566178" stroke-width="2"/>
 <line x1="104" y1="278" x2="296" y2="278" stroke="#566178" stroke-width="2"/>
 <line x1="104" y1="278" x2="104" y2="294" stroke="#68d7ff" stroke-width="2" stroke-dasharray="4 3"/><polygon points="104,300 99,292 109,292" fill="#68d7ff"/>
 <line x1="296" y1="278" x2="296" y2="294" stroke="#fca5a5" stroke-width="2"/><polygon points="296,300 291,292 301,292" fill="#fca5a5"/>
-<rect x="12" y="302" width="182" height="132" rx="8" fill="#151922" stroke="#68d7ff" stroke-width="1.4" stroke-dasharray="5 4"/>
-<text x="103" y="328" font-size="13" fill="#68d7ff" font-weight="700" text-anchor="middle">第5段階は現れず</text>
-<text x="103" y="352" font-size="15" fill="#aeb7c8" font-weight="700" text-anchor="middle">Acceptance</text>
+<rect x="12" y="302" width="182" height="86" rx="8" fill="#151922" stroke="#68d7ff" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="103" y="327" font-size="13" fill="#68d7ff" font-weight="700" text-anchor="middle">第5段階は現れず</text>
+<text x="103" y="351" font-size="15" fill="#aeb7c8" font-weight="700" text-anchor="middle">Acceptance</text>
 <text x="103" y="372" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">（受容）</text>
-<text x="103" y="400" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">タイトルカードなし</text>
-<text x="103" y="420" font-size="13" fill="#68d7ff" font-weight="400" text-anchor="middle">エドは母の生還を願う</text>
-<rect x="206" y="302" width="182" height="132" rx="8" fill="#22141b" stroke="#fca5a5" stroke-width="1.8"/>
-<text x="297" y="328" font-size="13" fill="#fca5a5" font-weight="700" text-anchor="middle">代わりに割り込む</text>
-<text x="297" y="352" font-size="15" fill="#fca5a5" font-weight="700" text-anchor="middle">FACES OF BLISS</text>
+<rect x="206" y="302" width="182" height="86" rx="8" fill="#22141b" stroke="#fca5a5" stroke-width="1.8"/>
+<text x="297" y="327" font-size="13" fill="#fca5a5" font-weight="700" text-anchor="middle">代わりに割り込む</text>
+<text x="297" y="351" font-size="15" fill="#fca5a5" font-weight="700" text-anchor="middle">FACES OF BLISS</text>
 <text x="297" y="372" font-size="13" fill="#fca5a5" font-weight="400" text-anchor="middle">（至福の顔）</text>
-<text x="297" y="400" font-size="13" fill="#e8edf7" font-weight="400" text-anchor="middle">ボンが舞台裏へ誘導・殺害</text>
-<text x="297" y="420" font-size="13" fill="#fca5a5" font-weight="700" text-anchor="middle">シャの機体へ移す</text>
 </svg>
