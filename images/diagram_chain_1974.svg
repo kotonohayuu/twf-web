@@ -2,7 +2,7 @@
 <title>1974年5月〜7月の主な出来事</title>
 <desc>1974年5月2日の飲酒事故から、虚偽の説明と告訴見送り、Rocketの異変、ジャック失踪、開店、スーザン・チャールズ・ローズマリーの被害と閉業、7月26日の警察聴取までを日付順に並べた図。</desc>
 <rect x="0" y="0" width="400" height="452" rx="8" fill="#0e131e" stroke="none"/>
-<text x="14" y="24" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">1974年5月〜7月（日付順）</text>
+<text x="14" y="24" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">1974年5月〜7月（日付順）</text>
 <line x1="94" y1="52" x2="94" y2="404" stroke="#30384a" stroke-width="2"/>
 <text x="80" y="56.5" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="end">05/02 夜</text>
 <circle cx="94" cy="52" r="5" fill="#fca5a5"/>
@@ -32,7 +32,7 @@
 <circle cx="94" cy="404" r="5" fill="#68d7ff"/>
 <text x="112" y="409" font-size="14.5" fill="#e8edf7" font-weight="400" text-anchor="start">フェリックス聴取（逮捕されず退席）</text>
 <circle cx="24" cy="434" r="4.5" fill="#fca5a5"/>
-<text x="35" y="438" font-size="12" fill="#aeb7c8" font-weight="400" text-anchor="start">死亡・襲撃・失踪</text>
+<text x="35" y="438" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">死亡・襲撃・失踪</text>
 <circle cx="164" cy="434" r="4.5" fill="#68d7ff"/>
-<text x="175" y="438" font-size="12" fill="#aeb7c8" font-weight="400" text-anchor="start">その他の節目</text>
+<text x="175" y="438" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">その他の節目</text>
 </svg>

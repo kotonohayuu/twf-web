@@ -2,7 +2,7 @@
 <title>ファイル4の場面を作中の日付順に並べ直したもの</title>
 <desc>丸数字は映像での登場順。作中の日付順では、2 チャールズのノート（1970年10月10日）、5 WALKAROUND TEST（1974年1月21日）、6 FACIAL TRACKING（3月7日）、1 スクールダンス（5月2日夜）、9 ジャックがフェリックス宅へ（5月3日0時23分）、10 フェリックスの森（5月3日8時56分）、11 フェリックスの告白（5月5日）、7 Rocket事件（5月13日）、8 THE FIRST スーザン襲撃（6月30日）、12 Wonderlandの会話（7月1日1時36分）。3と4は日付が示されない。</desc>
 <rect x="0" y="0" width="400" height="712" rx="8" fill="#0e131e" stroke="none" stroke-width="1"/>
-<text x="12" y="24" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">映像に出てくる順</text>
+<text x="12" y="24" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">映像に出てくる順</text>
 <circle cx="24" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="24" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">1</text>
 <line x1="37" y1="48" x2="43" y2="48" stroke="#566178" stroke-width="1"/>
 <circle cx="56" cy="48" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="56" y="52.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">2</text>
@@ -76,7 +76,7 @@
 <text x="86" y="590.5" font-size="13.5" fill="#aeb7c8" font-weight="400" text-anchor="end">07/01 1:36</text>
 <circle cx="128" cy="586" r="12" fill="#0e131e" stroke="#68d7ff" stroke-width="1.5"/><text x="128" y="590.5" font-size="12.5" fill="#68d7ff" font-weight="700" text-anchor="middle">12</text>
 <text x="148" y="591" font-size="15" fill="#e8edf7" font-weight="400" text-anchor="start">Wonderlandの会話</text>
-<text x="12" y="620" font-size="12.5" fill="#aeb7c8" font-weight="400" text-anchor="start">日付が示されない場面</text>
+<text x="12" y="620" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="start">日付が示されない場面</text>
 <rect x="8" y="630" width="384" height="70" rx="6" fill="none" stroke="#30384a" stroke-width="1" stroke-dasharray="4 4"/>
 <circle cx="30" cy="650" r="12" fill="#0e131e" stroke="#aeb7c8" stroke-width="1.5" stroke-dasharray="3 3"/><text x="30" y="654.5" font-size="12.5" fill="#aeb7c8" font-weight="700" text-anchor="middle">3</text>
 <text x="50" y="655" font-size="14" fill="#e8edf7" font-weight="400" text-anchor="start">Showstoppersの紹介と設計解説</text>
