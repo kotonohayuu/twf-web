@@ -399,6 +399,7 @@ const IMAGE_SIZES = {
   "diagram_chain_1974.svg": [400, 452],
   "diagram_relationships.svg": [400, 564],
   "diagram_bon_wonderland.svg": [400, 282],
+  "f5_09_shadowman.webp": [960, 480],
   "jack_photo.webp": [503, 632]
 };
 
