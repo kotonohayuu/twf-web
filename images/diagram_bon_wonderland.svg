@@ -1,32 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="398" viewBox="0 0 400 398" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="282" viewBox="0 0 400 282" role="img" font-family="'Yu Gothic UI','Hiragino Kaku Gothic ProN','Noto Sans JP','Meiryo',sans-serif">
 <title>現実世界とWonderlandのつながり</title>
-<desc>上段の現実世界と下段の白い空間Wonderlandの2層で構成。左列では、Wonderlandにいる霊の「Bon」が現実の機体ボンへ憑依して動かし、留置場のカメラ映像も乗っ取ることを上向きの矢印で示す。右列では、襲撃や入水で生死の境に置かれた人々の魂がWonderlandへ移ることを下向きの矢印で示す。Wonderlandの中では、機体へ入るよう誘う「Bon」と、入水した母の生還を願って現実へ押し戻すエド＆モリーが並ぶ。</desc>
-<rect x="0" y="0" width="400" height="398" rx="8" fill="#0e131e" stroke="none"/>
-<rect x="12" y="12" width="376" height="152" rx="8" fill="#151922" stroke="#566178" stroke-width="1.4"/>
+<desc>上段の現実世界と下段の白い空間Wonderlandの2層で構成。現実世界にはボン（機体）とスーザン・ローズマリー等、Wonderlandには「Bon」（灰色の存在）とエド＆モリーが並ぶ。左列ではWonderlandの「Bon」から現実のボン（機体）へ「憑依・干渉」の上向き矢印が、右列では現実のスーザン・ローズマリー等からWonderlandへ「魂が移る」の下向き矢印が伸びている。</desc>
+<rect x="0" y="0" width="400" height="282" rx="8" fill="#0e131e" stroke="none"/>
+<rect x="12" y="12" width="376" height="98" rx="8" fill="#151922" stroke="#566178" stroke-width="1.4"/>
 <text x="26" y="37" font-size="14" fill="#9db7ff" font-weight="700" text-anchor="start">現実世界（店舗・警察署・ウォルテン家）</text>
-<rect x="18" y="50" width="178" height="102" rx="6" fill="#0e131e" stroke="#c9a4ff" stroke-width="1.3"/>
-<text x="107" y="74" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="middle">ボン（機体）</text>
-<text x="107" y="98" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">舞台裏やK-9で人を襲い</text>
-<text x="107" y="117" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">他の機体へ詰め込む</text>
-<text x="107" y="139" font-size="13" fill="#c9a4ff" font-weight="400" text-anchor="middle">「Bon」が憑依して動かす</text>
-<rect x="204" y="50" width="178" height="102" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
-<text x="293" y="74" font-size="13.5" fill="#e8edf7" font-weight="700" text-anchor="middle">スーザン・ローズマリー等</text>
-<text x="293" y="98" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">襲撃・入水で生死の境へ</text>
-<text x="293" y="117" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">のちにバニーやシャの</text>
-<text x="293" y="139" font-size="13" fill="#fca5a5" font-weight="400" text-anchor="middle">機体の中に留まる</text>
-<line x1="109" y1="226" x2="109" y2="174" stroke="#c9a4ff" stroke-width="2"/><polygon points="109,168 104,176 114,176" fill="#c9a4ff"/>
-<text x="121" y="201" font-size="13.5" fill="#c9a4ff" font-weight="700" text-anchor="start">憑依・干渉</text>
-<line x1="291" y1="168" x2="291" y2="220" stroke="#fca5a5" stroke-width="2"/><polygon points="291,226 286,218 296,218" fill="#fca5a5"/>
-<text x="281" y="201" font-size="13.5" fill="#fca5a5" font-weight="700" text-anchor="end">魂が移る</text>
-<rect x="12" y="230" width="376" height="156" rx="8" fill="#1a1726" stroke="#c9a4ff" stroke-width="1.4"/>
-<text x="26" y="255" font-size="14" fill="#c9a4ff" font-weight="700" text-anchor="start">Wonderland（真っ白な空間）</text>
-<rect x="18" y="268" width="178" height="106" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
-<text x="107" y="292" font-size="14" fill="#fca5a5" font-weight="700" text-anchor="middle">「Bon」（灰色の存在）</text>
-<text x="107" y="316" font-size="13" fill="#e8edf7" font-weight="400" text-anchor="middle">機体へ入るよう誘う</text>
-<text x="107" y="337" font-size="13" fill="#c9a4ff" font-weight="400" text-anchor="middle">留置場のカメラも乗っ取る</text>
-<text x="107" y="360" font-size="13" fill="#aeb7c8" font-weight="400" text-anchor="middle">正体は作中で未確定</text>
-<rect x="204" y="268" width="178" height="106" rx="6" fill="#0e131e" stroke="#68d7ff" stroke-width="1.3"/>
-<text x="293" y="292" font-size="14.5" fill="#68d7ff" font-weight="700" text-anchor="middle">エド＆モリー</text>
-<text x="293" y="322" font-size="13" fill="#e8edf7" font-weight="400" text-anchor="middle">入水した母の生還を願い</text>
-<text x="293" y="343" font-size="13" fill="#68d7ff" font-weight="400" text-anchor="middle">現実へ押し戻す</text>
+<rect x="18" y="50" width="178" height="48" rx="6" fill="#0e131e" stroke="#c9a4ff" stroke-width="1.3"/>
+<text x="107" y="79.5" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="middle">ボン（機体）</text>
+<rect x="204" y="50" width="178" height="48" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
+<text x="293" y="79" font-size="13.5" fill="#e8edf7" font-weight="700" text-anchor="middle">スーザン・ローズマリー等</text>
+<line x1="107" y1="172" x2="107" y2="124" stroke="#c9a4ff" stroke-width="2"/><polygon points="107,116 102,125 112,125" fill="#c9a4ff"/>
+<text x="119" y="148" font-size="13.5" fill="#c9a4ff" font-weight="700" text-anchor="start">憑依・干渉</text>
+<line x1="293" y1="110" x2="293" y2="164" stroke="#fca5a5" stroke-width="2"/><polygon points="293,172 288,163 298,163" fill="#fca5a5"/>
+<text x="281" y="148" font-size="13.5" fill="#fca5a5" font-weight="700" text-anchor="end">魂が移る</text>
+<rect x="12" y="172" width="376" height="98" rx="8" fill="#1a1726" stroke="#c9a4ff" stroke-width="1.4"/>
+<text x="26" y="197" font-size="14" fill="#c9a4ff" font-weight="700" text-anchor="start">Wonderland（真っ白な空間）</text>
+<rect x="18" y="210" width="178" height="48" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
+<text x="107" y="239.5" font-size="14" fill="#fca5a5" font-weight="700" text-anchor="middle">「Bon」（灰色の存在）</text>
+<rect x="204" y="210" width="178" height="48" rx="6" fill="#0e131e" stroke="#68d7ff" stroke-width="1.3"/>
+<text x="293" y="239.5" font-size="15" fill="#68d7ff" font-weight="700" text-anchor="middle">エド＆モリー</text>
 </svg>
