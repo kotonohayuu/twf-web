@@ -1245,6 +1245,36 @@ function isValidGlossaryBoundary(text, start, alias) {
   return true;
 }
 
+// 箇条書きの行頭にある太字が「用語名そのもの」のとき、その用語の id を返す（それ以外は空）。
+// 例：「**ローズマリー・ウォルテン**：…」「**スーザン・ウッディングス（バニー）**：…」
+//     「**デビッド・ゴンザレス（生還）とブライアン・ステルズ（死亡）**：…」
+// 「**ジャックの出発（6月11日）…**」のように用語で始まるだけの見出しは対象にしない。
+function findGlossaryLabelIds(textNode, candidates) {
+  const strong = textNode.parentElement;
+  if (!strong || strong.tagName !== "STRONG" || strong.childNodes.length !== 1) return [];
+  const item = strong.parentElement;
+  if (!item || item.tagName !== "LI") return [];
+  let first = item.firstChild;
+  while (first && first.nodeType === Node.TEXT_NODE && !first.nodeValue.trim()) first = first.nextSibling;
+  if (first !== strong) return [];
+
+  // 丸括弧の添え書きを外し、残りが用語名（と区切り）だけでできているかを見る
+  const label = textNode.nodeValue.replace(/（[^（）]*）/g, "").trim();
+  if (!label) return [];
+  const ids = [];
+  let pos = 0;
+  while (pos < label.length) {
+    const hit = candidates.find((candidate) => label.startsWith(candidate.alias, pos));
+    if (!hit) return [];
+    ids.push(hit.id);
+    pos += hit.alias.length;
+    const separator = /^[\s、，,／/＆&と]+/.exec(label.slice(pos));
+    if (separator) pos += separator[0].length;
+    else if (pos < label.length) return [];
+  }
+  return ids;
+}
+
 function collectGlossaryScopes(root) {
   if (!root) return [];
   const scopes = [];
@@ -1343,6 +1373,15 @@ function enhanceGlossaryTerms(glossaryItems, root) {
       }
     });
 
+    // 人物などを1件ずつ紹介する箇条書き（行頭の太字が用語名そのもの）では、
+    // 同じ節の手前の行に名前が先に出ていても、その太字の名前のほうに付ける。
+    const reservedNodes = new Map();
+    textNodes.forEach((textNode) => {
+      findGlossaryLabelIds(textNode, candidates).forEach((id) => {
+        if (!reservedNodes.has(id)) reservedNodes.set(id, textNode);
+      });
+    });
+
     textNodes.forEach((textNode) => {
       if (seenIds.size >= glossaryItems.length) return;
       const text = textNode.nodeValue;
@@ -1356,6 +1395,8 @@ function enhanceGlossaryTerms(glossaryItems, root) {
 
         for (const candidate of candidates) {
           if (seenIds.has(candidate.id)) continue;
+          const reservedNode = reservedNodes.get(candidate.id);
+          if (reservedNode && reservedNode !== textNode) continue;
           let searchFrom = cursor;
           while (searchFrom < text.length) {
             const idx = text.indexOf(candidate.alias, searchFrom);
