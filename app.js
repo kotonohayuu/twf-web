@@ -312,7 +312,8 @@ const SECTION_CATEGORY_BY_ID = {
   "felix-facts": "fact",
   "summary-walten": "fact",
   "summary-bon": "fact",
-  "felix-hypothesis": "analysis"
+  "felix-hypothesis": "analysis",
+  "summary-discrepancies": "supplement"
 };
 
 function escapeHtml(text) {
@@ -331,6 +332,9 @@ function escapeHtmlAttr(text) {
 function sanitizeLinkHref(rawHref) {
   const href = rawHref.trim();
   if (/^#[A-Za-z0-9_-]+$/.test(href)) return href;
+  // ほかの章のページへのリンク：/file5 や /file5#f5-09 の形で、CHAPTERS にある章だけを通す。
+  const chapterLink = /^\/([a-z0-9-]+)(#[A-Za-z0-9_-]+)?$/.exec(href);
+  if (chapterLink && CHAPTERS.some((chapter) => chapter.slug === chapterLink[1])) return href;
   if (/^https?:\/\/[^\s"'<>`]+$/i.test(href)) return href;
   return "";
 }
@@ -350,7 +354,8 @@ function formatInline(text) {
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/\[(.+?)\]\((#.+?)\)/g, (_match, textValue, href) => {
+    // [文字](#見出しid) は同じ章の中へ、[文字](/章) と [文字](/章#見出しid) はほかの章のページへのリンク。
+    .replace(/\[(.+?)\]\(((?:#|\/)[^)\s]+?)\)/g, (_match, textValue, href) => {
       const safeHref = sanitizeLinkHref(href);
       return safeHref ? `<a href="${escapeHtmlAttr(safeHref)}">${textValue}</a>` : textValue;
     })
