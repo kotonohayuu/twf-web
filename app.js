@@ -3390,9 +3390,23 @@ function wireSearch(glossaryReady) {
 
     suggestOpen = true;
     suggestPanel.hidden = false;
+    syncSuggestMaxHeight();
     searchInput.setAttribute("aria-expanded", "true");
     searchInput.removeAttribute("aria-activedescendant");
   };
+
+  function syncSuggestMaxHeight() {
+    if (!suggestOpen || suggestPanel.hidden) return;
+    const top = suggestPanel.getBoundingClientRect().top;
+    const available = window.innerHeight - top - 12;
+    if (available >= 140) {
+      suggestPanel.style.maxHeight = `${Math.min(360, Math.floor(available))}px`;
+    } else {
+      suggestPanel.style.removeProperty("max-height");
+    }
+  }
+  window.addEventListener("resize", syncSuggestMaxHeight, { passive: true });
+  window.addEventListener("scroll", syncSuggestMaxHeight, { passive: true });
 
   searchInput.addEventListener("focus", () => {
     if (suppressNextFocusOpen) return;

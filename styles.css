@@ -497,6 +497,7 @@ button:active {
 
 .content {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -1946,6 +1947,7 @@ body.error-page {
 /* 章ページの末尾：前後の章とトップへのリンク */
 .chapter-nav {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -1987,6 +1989,8 @@ body.error-page {
 
 .chapter-nav__home {
   justify-self: center;
+  max-width: 100%;
+  text-align: center;
   font-size: 0.92rem;
 }
 
@@ -2072,7 +2076,7 @@ body.error-page {
   }
 
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 20px 14px 28px;
     gap: 16px;
   }
@@ -2268,11 +2272,16 @@ html {
     padding: 22px 10px 16px;
   }
 
-  /* 検索：入力欄と「検索」「クリア」を1行に並べる（検索候補の一覧がボタンを覆わない） */
+  /* 検索：入力欄と「検索」「クリア」を1行に並べ、検索候補ドロップダウンはその下に全幅で出す */
   .hero__actions {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 6px;
+  }
+
+  .search-box {
+    position: static;
   }
 
   .hero__actions > button {
