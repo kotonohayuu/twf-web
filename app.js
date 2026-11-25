@@ -143,7 +143,7 @@ function resolveStageIndexFor(node) {
   }
   let chapterStage = STAGE_ALL;
   for (let el = topLevel; el; el = el.previousElementSibling) {
-    if (el.tagName === "H2") {
+    if (el.tagName === "H1" || el.tagName === "H2") {
       const title = el.dataset.cleanTitle || el.textContent || "";
       const index = STAGE_ORDER.findIndex((name) => title.trim().startsWith(name));
       chapterStage = index >= 0 ? index : STAGE_ALL;
@@ -404,8 +404,7 @@ const IMAGE_SIZES = {
   "diagram_chain_1974.svg": [400, 452],
   "diagram_relationships.svg": [400, 564],
   "diagram_bon_wonderland.svg": [400, 282],
-  "f5_09_shadowman.webp": [960, 480],
-  "jack_photo.webp": [503, 632]
+  "f5_09_shadowman.webp": [960, 480]
 };
 
 function renderImage(altText, src, spoilerUntil = "") {
@@ -445,10 +444,35 @@ const IMAGE_VIEWER_TARGETS = ".wiki-image, .tl-thumb, .guide-people__avatar, .he
 const IMAGE_VIEWER_ZOOM = 2;
 let imageViewer = null;
 
+function isZoomableImage(el) {
+  if (!(el instanceof HTMLImageElement) || !el.matches(IMAGE_VIEWER_TARGETS)) return false;
+  if (document.body?.classList.contains("error-page")) return false;
+  if (el.closest("a, button, summary, .image-viewer")) return false;
+  return true;
+}
+
+// 拡大表示できる画像にキーボード操作とフォーカス復帰用の属性を付与する。
+function enhanceImageViewerTriggers(root = document) {
+  if (!root || document.body?.classList.contains("error-page")) return;
+  const targets =
+    root instanceof HTMLImageElement
+      ? [root]
+      : Array.from(root.querySelectorAll(IMAGE_VIEWER_TARGETS));
+  targets.forEach((img) => {
+    if (!isZoomableImage(img)) return;
+    img.tabIndex = 0;
+    img.setAttribute("role", "button");
+    img.setAttribute("aria-haspopup", "dialog");
+    img.setAttribute("aria-label", img.alt ? `${img.alt}（押すと拡大表示）` : "画像を拡大表示");
+  });
+}
+
 // 一覧用の小さい画像（images/thumbs・images/cards）には、同じ名前の大きい画像が images/ にあることが多い。
-// あればそちらを開き、なければ小さい画像をそのまま開く。
-function fullSizeImageSrc(src) {
-  const match = /^(.*\/images\/)(?:thumbs|cards)\/([^/?#]+)$/.exec(src);
+// data-full-src が明示されていればそちらを優先し、なければ同じ名前の大きい画像を試す。
+function fullSizeImageSrc(source, thumbSrc) {
+  const explicit = source.dataset.fullSrc ? sanitizeImageSrc(source.dataset.fullSrc) : "";
+  if (explicit) return explicit;
+  const match = /^(.*\/images\/)(?:thumbs|cards)\/([^/?#]+)$/.exec(thumbSrc);
   return match ? `${match[1]}${match[2]}` : "";
 }
 
@@ -472,6 +496,9 @@ function buildImageViewer() {
   const img = document.createElement("img");
   img.className = "image-viewer__image";
   img.alt = "";
+  img.tabIndex = 0;
+  img.setAttribute("role", "button");
+  img.setAttribute("aria-label", "拡大倍率を切り替える");
   stage.appendChild(img);
 
   const caption = document.createElement("p");
@@ -521,6 +548,11 @@ function buildImageViewer() {
     }
   });
 
+  const toggleZoom = (anchor = null) => {
+    viewer.zoomed = !viewer.zoomed;
+    layout(anchor);
+  };
+
   img.addEventListener("click", (event) => {
     event.stopPropagation();
     const rect = img.getBoundingClientRect();
@@ -531,8 +563,14 @@ function buildImageViewer() {
       viewX: event.clientX - stageRect.left,
       viewY: event.clientY - stageRect.top
     };
-    viewer.zoomed = !viewer.zoomed;
-    layout(anchor);
+    toggleZoom(anchor);
+  });
+
+  img.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    event.stopPropagation();
+    toggleZoom();
   });
 
   closeBtn.addEventListener("click", (event) => {
@@ -579,12 +617,14 @@ function openImageViewer(source) {
   if (viewer.dialog.open || typeof viewer.dialog.showModal !== "function") return;
 
   const thumbSrc = source.currentSrc || source.src;
-  const fullSrc = fullSizeImageSrc(thumbSrc);
+  const fullSrc = fullSizeImageSrc(source, thumbSrc);
   const attrWidth = Number(source.getAttribute("width"));
   const attrHeight = Number(source.getAttribute("height"));
-  if (source.naturalWidth && source.naturalHeight && !fullSrc) {
+  const resolvedFull = fullSrc ? new URL(fullSrc, window.location.href).href : "";
+  const isDifferentFull = Boolean(resolvedFull && resolvedFull !== thumbSrc);
+  if (source.naturalWidth && source.naturalHeight && !isDifferentFull) {
     viewer.ratio = source.naturalWidth / source.naturalHeight;
-  } else if (attrWidth && attrHeight && !fullSrc) {
+  } else if (attrWidth && attrHeight && !isDifferentFull) {
     viewer.ratio = attrWidth / attrHeight;
   } else {
     viewer.ratio = 4 / 3;
@@ -611,11 +651,19 @@ function openImageViewer(source) {
 
 document.addEventListener("click", (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLImageElement) || !target.matches(IMAGE_VIEWER_TARGETS)) return;
+  if (!isZoomableImage(target)) return;
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  if (target.closest("a, button, summary, .image-viewer")) return;
   event.preventDefault();
   // 用語カードの中の画像でも、カードが「外側を押された」と受け取って閉じないようにする
+  event.stopPropagation();
+  openImageViewer(target);
+}, true);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target;
+  if (!isZoomableImage(target)) return;
+  event.preventDefault();
   event.stopPropagation();
   openImageViewer(target);
 }, true);
@@ -952,7 +1000,7 @@ function createTocItemElement(heading) {
   const yearLabel = extractHeadingYear(rawText);
 
   link.href = `#${heading.id}`;
-  link.dataset.level = heading.tagName.replace("H", "");
+  link.dataset.level = heading.tagName === "H1" ? "2" : heading.tagName.replace("H", "");
   link.dataset.targetId = heading.id;
 
   if (yearLabel) {
@@ -1006,7 +1054,7 @@ function buildTocItems() {
   fragment.appendChild(createTocHomeItem());
   chapterGroups.forEach((group) => {
     if (group === currentChapter && markdownContainer) {
-      markdownContainer.querySelectorAll("h2, h3").forEach((heading) => {
+      markdownContainer.querySelectorAll("h1, h2, h3").forEach((heading) => {
         fragment.appendChild(createTocItemElement(heading));
       });
     } else if (group.slug) {
@@ -1054,7 +1102,7 @@ function mountCurrentChapter({ useFirst = false } = {}) {
   markdownContainer.textContent = "";
   if (!currentChapter) {
     markdownContainer.innerHTML =
-      '<h2>この章は見つかりませんでした</h2><p><a href="/">トップ（クイックガイド・主要年表・章の一覧）へ戻る</a></p>';
+      '<h1>この章は見つかりませんでした</h1><p><a href="/">トップ（クイックガイド・主要年表・章の一覧）へ戻る</a></p>';
     return;
   }
   while (currentChapter.root.firstChild) {
@@ -1062,10 +1110,22 @@ function mountCurrentChapter({ useFirst = false } = {}) {
   }
   currentChapter.root = markdownContainer;
 
-  // 章の題名の上に出す表示（「PLAY   02 / 09」。見た目は styles.css の h2[data-tape-label]）。
+  // 章ページの先頭見出し（h2）をページ主見出し（h1）へ昇格させ、見出し階層を揃える。
+  let chapterHeading = markdownContainer.querySelector("h2");
+  if (chapterHeading) {
+    const h1 = document.createElement("h1");
+    if (chapterHeading.id) h1.id = chapterHeading.id;
+    if (chapterHeading.dataset.cleanTitle) h1.dataset.cleanTitle = chapterHeading.dataset.cleanTitle;
+    while (chapterHeading.firstChild) {
+      h1.appendChild(chapterHeading.firstChild);
+    }
+    chapterHeading.replaceWith(h1);
+    chapterHeading = h1;
+  }
+
+  // 章の題名の上に出す表示（「PLAY   02 / 09」。見た目は styles.css の h1[data-tape-label]）。
   const linked = chapterGroups.filter((group) => group.slug);
   const position = linked.indexOf(currentChapter);
-  const chapterHeading = markdownContainer.querySelector("h2");
   if (chapterHeading && position >= 0) {
     const pad = (value) => String(value).padStart(2, "0");
     chapterHeading.dataset.tapeLabel = `PLAY   ${pad(position + 1)} / ${pad(linked.length)}`;
@@ -1145,7 +1205,7 @@ const SCRAMBLE_STEPS = 20; // 1コマ40ミリ秒
 const SCRAMBLE_HOLD = 3; // 最初の数コマは、すべてでたらめな文字のまま
 
 function scrambleTapeLabel() {
-  const heading = markdownContainer?.querySelector("h2[data-tape-label]");
+  const heading = markdownContainer?.querySelector("h1[data-tape-label], h2[data-tape-label]");
   if (!heading || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const finalText = heading.dataset.tapeLabel || "";
   const chars = Array.from(finalText);
@@ -1471,7 +1531,7 @@ function collectGlossaryScopes(root) {
   let currentIntroNodes = [];
 
   Array.from(root.children).forEach((child) => {
-    if (child.tagName === "H2" || child.tagName === "HR" || child.classList.contains("back-to-toc")) {
+    if (child.tagName === "H1" || child.tagName === "H2" || child.tagName === "HR" || child.classList.contains("back-to-toc")) {
       if (currentIntroNodes.length > 0) {
         scopes.push(currentIntroNodes);
         currentIntroNodes = [];
@@ -1768,8 +1828,11 @@ function wireGlossaryPopovers(glossaryItems) {
       const img = document.createElement("img");
       img.className = "term-card__img";
       img.src = safeImg;
+      const safeFullImg = entry.fullImage ? sanitizeImageSrc(entry.fullImage) : "";
+      if (safeFullImg) img.dataset.fullSrc = safeFullImg;
       img.alt = entry.term;
       img.loading = "lazy";
+      enhanceImageViewerTriggers(img);
       content.appendChild(img);
     }
 
@@ -1847,6 +1910,7 @@ function wireGlossaryPopovers(glossaryItems) {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (imageViewer?.dialog.open) return;
     if (event.key === "Escape" && activeCard) {
       event.preventDefault();
       closePopover({ restoreFocus: true });
@@ -1919,6 +1983,7 @@ function wireTocToggle() {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (imageViewer?.dialog.open) return;
     if (event.key === "Escape" && readingBarDrawer && !readingBarDrawer.hidden) {
       setDrawerOpen(false);
       readingBarToggle?.focus();
@@ -1936,9 +2001,10 @@ function wireTocToggle() {
 
 function wireActiveHeadingTracker() {
   if (!markdownContainer) return;
-  const headings = Array.from(markdownContainer.querySelectorAll("h2, h3"));
+  const headings = Array.from(markdownContainer.querySelectorAll("h1, h2, h3"));
   if (headings.length === 0) return;
 
+  const isChapterHeading = (heading) => heading.tagName === "H1" || heading.tagName === "H2";
   const quickGuideSection = document.querySelector(".quick-guide");
   const timelineSection = document.querySelector(".timeline");
   const narrowBarQuery = window.matchMedia("(max-width: 640px)");
@@ -1964,7 +2030,7 @@ function wireActiveHeadingTracker() {
       const rect = heading.getBoundingClientRect();
       if (rect.top <= threshold) {
         activeHeading = heading;
-        if (heading.tagName === "H2") {
+        if (isChapterHeading(heading)) {
           activeH2 = heading;
         }
       } else {
@@ -1993,15 +2059,15 @@ function wireActiveHeadingTracker() {
       }
       if (bottomHeading && headings.indexOf(bottomHeading) > headings.indexOf(activeHeading)) {
         activeHeading = bottomHeading;
-        activeH2 = bottomHeading.tagName === "H2" ? bottomHeading : null;
+        activeH2 = isChapterHeading(bottomHeading) ? bottomHeading : null;
       }
     }
 
-    // If activeHeading is H3, make sure activeH2 points to its owning H2
+    // If activeHeading is H3, make sure activeH2 points to its owning chapter heading
     if (activeHeading && activeHeading.tagName === "H3" && !activeH2) {
       const idx = headings.indexOf(activeHeading);
       for (let i = idx - 1; i >= 0; i -= 1) {
-        if (headings[i].tagName === "H2") {
+        if (isChapterHeading(headings[i])) {
           activeH2 = headings[i];
           break;
         }
@@ -2173,7 +2239,7 @@ function marksForMatch(mark) {
   return matchMarks.get(mark) || [mark];
 }
 
-const SEARCH_BLOCK_SELECTOR = "p, li, figcaption, h2, h3, h4";
+const SEARCH_BLOCK_SELECTOR = "p, li, figcaption, h1, h2, h3, h4";
 const INTER_BLOCK_CONTAINERS = new Set(["UL", "OL", "DIV", "SECTION", "BLOCKQUOTE", "FIGURE", "DETAILS"]);
 
 // 用語の span や太字などの inline 要素は、検索する文字列の区切りにはしない（段落・箇条書き・見出しごとに繋ぐ）。
@@ -3696,6 +3762,7 @@ async function init() {
   summaryStatus.textContent = "";
   wireSearchPlaceholder();
   wireGuideSpoiler();
+  enhanceImageViewerTriggers(document);
 
   const glossaryReady = fetch("/glossary.json", { cache: "no-cache" })
     .then((response) => response.ok ? response.json() : [])
@@ -3727,6 +3794,7 @@ async function init() {
     chapterGroups = splitIntoChapters(fullRoot);
     if (IS_CHAPTER_PAGE) {
       mountCurrentChapter({ useFirst: !loadedFromFile });
+      enhanceImageViewerTriggers(markdownContainer);
     }
     if (loadedFromFile && redirectHashToChapter()) return;
     if (IS_CHAPTER_PAGE) {

@@ -145,6 +145,7 @@
     "term": "クリス・エステリノ（Chris Esterino）",
     "aliases": ["クリス・エステリノ", "Chris Esterino", "クリス", "Chris"],
     "image": "./images/thumbs/chris_esterino.webp",
+    "fullImage": "./images/f5_07_chris_bons.webp",
     "description": "BSIの社員・関係者。『ファイル5』では1974年7月17日にBon's Burgersへ来たローズマリーと向き合い、フェリックスによる解雇と接近禁止命令の動きを伝えつつ、彼女を気遣って支援やセラピーを勧めた。1982年にはブライアンの上司として言及される。",
     "fullFrom": "ファイル5",
     "before": [
@@ -158,6 +159,7 @@
     "term": "デビッド・ゴンザレス（David Gonzalez）",
     "aliases": ["デビッド・ゴンザレス", "デビッド", "David Gonzalez"],
     "image": "./images/thumbs/david_gonzalez.webp",
+    "fullImage": "./images/hotline_00_david_call.webp",
     "description": "『Hotline』に登場するK-9保管施設の管理人。1977年頃の夜勤中に館内の異変と悪臭を本社ホットラインへ通報したが帰宅を拒まれ、ブーズー・チャールズの霊・「Bon」に遭遇したのち、施設から逃走して生還した。"
   },
   {
@@ -165,6 +167,7 @@
     "term": "デレク・コリンズ刑事（Detective Dereck Collins）",
     "aliases": ["デレク・コリンズ刑事", "デレク・コリンズ", "デレク刑事", "デレク", "Dereck Collins"],
     "image": "./images/thumbs/dereck_collins.webp",
+    "fullImage": "./images/f5_08_dereck_rescue.webp",
     "description": "ブライトン市警の主任刑事。『ファイル5』で1974年5月5日の遺留品返却と7月19日のローズマリー救助を担当し、『My Soul』では7月26日にフェリックスを追及したほか、留置場の監視カメラ乗っ取りとジャックのポスター変質を捜査記録へ残した。",
     "fullFrom": "My Soul",
     "before": [
@@ -274,6 +277,7 @@
     "term": "Rocket（ロケット）",
     "aliases": ["Rocket", "ロケット"],
     "image": "./images/thumbs/rocket_main.webp",
+    "fullImage": "./images/thumbs/rocket_main.webp",
     "description": "エドとモリーの魂が宿った青い蝶ネクタイの灰色のウサギ人形。事故現場からフェリックスに持ち帰られ、後にK-9施設のバックドアの壁に吊るされた。",
     "fullFrom": "ファイル4",
     "before": [
