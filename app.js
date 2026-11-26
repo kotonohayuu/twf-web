@@ -157,29 +157,60 @@ function resolveStageIndexFor(node) {
   return Math.max(chapterStage, markedStage);
 }
 
-// 用語集の説明文を、時点に合わせて選ぶ。
-// description … 全編を見た人向けの説明。fullFrom の時点から出す（省略時は最初から）。
-// before      … それより前の時点の説明。from の時点から、次の説明に替わるまで出す。
-function pickGlossaryDescription(entry, stageIndex) {
-  const full = { text: entry.description, partial: false };
+// 用語集の before[] から、指定時点に該当する候補を選ぶ（fullFrom 以降なら null）。
+function pickGlossaryBeforeCandidate(entry, stageIndex) {
   const earlier = Array.isArray(entry.before) ? entry.before : [];
-  if (earlier.length === 0) return full;
+  if (earlier.length === 0) return null;
 
   const fullFromIndex = entry.fullFrom ? stageIndexOf(entry.fullFrom) : 0;
-  if (fullFromIndex < 0 || stageIndex >= fullFromIndex) return full;
+  if (fullFromIndex < 0 || stageIndex >= fullFromIndex) return null;
 
   let chosen = earlier[0];
   earlier.forEach((candidate) => {
     const fromIndex = stageIndexOf(candidate.from);
     if (fromIndex >= 0 && fromIndex <= stageIndex) chosen = candidate;
   });
+  return chosen;
+}
+
+// 用語集の説明文を、時点に合わせて選ぶ。
+// description … 全編を見た人向けの説明。fullFrom の時点から出す（省略時は最初から）。
+// before      … それより前の時点の説明。from の時点から、次の説明に替わるまで出す。
+function pickGlossaryDescription(entry, stageIndex) {
+  const chosen = pickGlossaryBeforeCandidate(entry, stageIndex);
+  if (!chosen) return { text: entry.description, partial: false };
   return { text: chosen.description, partial: true };
+}
+
+// 用語集の画像を、時点に合わせて選ぶ。
+// imageFrom … 既定の image / fullImage を出し始める時点（省略時は最初から）。
+// before[] の該当候補に image が明示されている場合は（空文字を含め）そちらを優先する。
+function pickGlossaryMedia(entry, stageIndex) {
+  const chosen = pickGlossaryBeforeCandidate(entry, stageIndex);
+  if (chosen && Object.prototype.hasOwnProperty.call(chosen, "image")) {
+    return {
+      image: chosen.image || "",
+      fullImage: chosen.fullImage || ""
+    };
+  }
+  const imageFromIndex = entry.imageFrom ? stageIndexOf(entry.imageFrom) : 0;
+  if (imageFromIndex >= 0 && stageIndex < imageFromIndex) {
+    return { image: "", fullImage: "" };
+  }
+  return {
+    image: entry.image || "",
+    fullImage: entry.fullImage || ""
+  };
 }
 
 // 用語集に、時点の名前の書き間違いがないかを確かめる（開発者向けの画面に知らせる）。
 function checkGlossaryStages(glossaryItems) {
   glossaryItems.forEach((entry) => {
-    const names = [entry.fullFrom, ...(Array.isArray(entry.before) ? entry.before.map((b) => b.from) : [])];
+    const names = [
+      entry.fullFrom,
+      entry.imageFrom,
+      ...(Array.isArray(entry.before) ? entry.before.map((b) => b.from) : [])
+    ];
     names.forEach((name) => {
       if (name !== undefined && stageIndexOf(name) < 0) {
         console.warn(`glossary.json: 「${entry.term}」の時点「${name}」は ${STAGE_ORDER.join(" / ")} のどれでもありません。`);
@@ -263,7 +294,7 @@ const SECTION_CATEGORY_BY_ID = {
   "f4-12": "event",
   "f4-thoughts": "analysis",
   "f4-trivia": "supplement",
-  "f4-summary": "supplement",
+  "f4-summary": "fact",
   "lacrimosa-desc": "supplement",
   "lacrimosa-river": "event",
   "lacrimosa-console": "event",
@@ -1823,12 +1854,15 @@ function wireGlossaryPopovers(glossaryItems) {
     const content = document.createElement("div");
     content.className = "term-card__content";
 
-    const safeImg = entry.image ? sanitizeImageSrc(entry.image) : "";
+    // 画像と説明文は、押された場所の時点までに明かされた内容のものを出す。
+    const stageIndex = resolveStageIndexFor(trigger);
+    const media = pickGlossaryMedia(entry, stageIndex);
+    const safeImg = media.image ? sanitizeImageSrc(media.image) : "";
     if (safeImg) {
       const img = document.createElement("img");
       img.className = "term-card__img";
       img.src = safeImg;
-      const safeFullImg = entry.fullImage ? sanitizeImageSrc(entry.fullImage) : "";
+      const safeFullImg = media.fullImage ? sanitizeImageSrc(media.fullImage) : "";
       if (safeFullImg) img.dataset.fullSrc = safeFullImg;
       img.alt = entry.term;
       img.loading = "lazy";
@@ -1836,8 +1870,6 @@ function wireGlossaryPopovers(glossaryItems) {
       content.appendChild(img);
     }
 
-    // 説明文は、押された場所の時点までに明かされた内容のものを出す。
-    const stageIndex = resolveStageIndexFor(trigger);
     const picked = pickGlossaryDescription(entry, stageIndex);
     const desc = document.createElement("p");
     desc.className = "term-card__desc";

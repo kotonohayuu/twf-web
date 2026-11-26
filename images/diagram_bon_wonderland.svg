@@ -7,11 +7,11 @@
 <rect x="18" y="50" width="178" height="48" rx="6" fill="#0e131e" stroke="#c9a4ff" stroke-width="1.3"/>
 <text x="107" y="79.5" font-size="15" fill="#e8edf7" font-weight="700" text-anchor="middle">ボン（機体）</text>
 <rect x="204" y="50" width="178" height="48" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
-<text x="293" y="79" font-size="13.5" fill="#e8edf7" font-weight="700" text-anchor="middle">スーザン・ローズマリー等</text>
-<line x1="107" y1="172" x2="107" y2="124" stroke="#c9a4ff" stroke-width="2"/><polygon points="107,116 102,125 112,125" fill="#c9a4ff"/>
-<text x="119" y="148" font-size="13.5" fill="#c9a4ff" font-weight="700" text-anchor="start">憑依・干渉</text>
-<line x1="293" y1="110" x2="293" y2="164" stroke="#fca5a5" stroke-width="2"/><polygon points="293,172 288,163 298,163" fill="#fca5a5"/>
-<text x="281" y="148" font-size="13.5" fill="#fca5a5" font-weight="700" text-anchor="end">魂が移る</text>
+<text x="293" y="78.5" font-size="12.5" fill="#e8edf7" font-weight="700" text-anchor="middle">スーザン・ローズマリー等</text>
+<line x1="107" y1="170" x2="107" y2="120" stroke="#c9a4ff" stroke-width="2"/><polygon points="107,112 102,121 112,121" fill="#c9a4ff"/>
+<text x="119" y="146" font-size="13.5" fill="#c9a4ff" font-weight="700" text-anchor="start">憑依・干渉</text>
+<line x1="293" y1="112" x2="293" y2="162" stroke="#fca5a5" stroke-width="2"/><polygon points="293,170 288,161 298,161" fill="#fca5a5"/>
+<text x="281" y="146" font-size="13.5" fill="#fca5a5" font-weight="700" text-anchor="end">魂が移る</text>
 <rect x="12" y="172" width="376" height="98" rx="8" fill="#1a1726" stroke="#c9a4ff" stroke-width="1.4"/>
 <text x="26" y="197" font-size="14" fill="#c9a4ff" font-weight="700" text-anchor="start">Wonderland（真っ白な空間）</text>
 <rect x="18" y="210" width="178" height="48" rx="6" fill="#0e131e" stroke="#fca5a5" stroke-width="1.3"/>
